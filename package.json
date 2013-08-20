@@ -1,0 +1,44 @@
+{
+  "name": "hoist",
+  "version": "0.0.1-pre",
+  "description": "Client Side Library for Hoist (hoistapps.com)",
+  "homepage": "http://hoistapps.com",
+  "scripts": {
+    "test": "grunt test",
+    "install": "bower install"
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/hoist/hoist-js"
+  },
+  "author": "Hoist Apps Ltd",
+  "license": [
+    {
+      "type": "MIT",
+      "url": "https://github.com/jquery/jquery/blob/master/MIT-LICENSE.txt"
+    }
+  ],
+  "bugs": {
+    "url": "https://github.com/hoist/hoist-js/issues"
+  },
+  "dependencies": {
+    "grunt": "~0.4.1",
+    "grunt-compare-size": "~0.4.0-rc.3",
+    "grunt-git-authors": "~1.2.0",
+    "grunt-contrib-watch": "~0.5.2",
+    "grunt-contrib-jshint": "~0.6.3",
+    "requirejs": "~2.1.8",
+    "grunt-contrib-uglify": "~0.2.2",
+    "gzip-js": "~0.3.2",
+    "archiver": "~0.4.8",
+    "grunt-shell": "~0.3.1",
+    "grunt-nodemon": "~0.1.0",
+    "grunt-mocha-phantomjs": "~0.3.0",
+    "grunt-contrib-connect": "~0.3.0"
+  },
+  "devDependencies": {
+    "mocha-phantomjs": "~3.1.1",
+    "phantomjs": "~1.9.1-8",
+    "mocha": "~1.12.0"
+  }
+}

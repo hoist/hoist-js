@@ -1,0 +1,24 @@
+{
+  "name": "hoist",
+  "version": "0.0.1-pre",
+  "authors": [
+    "Hoist Apps Ltd"
+  ],
+  "description": "Hoist Client Side API",
+  "license": "MIT",
+  "homepage": "https://hoistapps.com",
+  "ignore": [
+    "**/.*",
+    "node_modules",
+    "bower_components",
+    "test",
+    "tests"
+  ],
+  "dependencies": {
+    "requirejs": "~2.1.8"
+  },
+  "devDependencies": {
+    "chai": "~1.7.2",
+    "mocha": "~1.12.0"
+  }
+}
