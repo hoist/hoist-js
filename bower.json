@@ -15,7 +15,8 @@
     "tests"
   ],
   "dependencies": {
-    "requirejs": "~2.1.8"
+    "requirejs": "~2.1.8",
+    "superagent": "~0.15.4"
   },
   "devDependencies": {
     "chai": "~1.7.2",

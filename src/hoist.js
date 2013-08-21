@@ -1,5 +1,15 @@
-define(['model'],function(Model){
+define([
+		'data',
+		'auth',
+		'bus',
+		'exceptions',
+		'config'
+		],function(data,auth,bus,exceptions,config){
 	return {
-		Model:Model
+		data:data,
+		auth:auth,
+		bus:bus,
+		exceptions:exceptions,
+		config:config
 	};
 });

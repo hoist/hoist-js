@@ -1,12 +1,19 @@
-define(['Hoist','chai'],function(Hoist,chai){
-	chai.should();
+define(['Hoist', 'chai'], function(Hoist, chai) {
+	var should = chai.should();
 	'use strict';
-	describe('Hoist api',function(){
-		it('should have a model function', function () {
-			Hoist.should.respondTo('Model');
+	describe('Hoist api', function() {
+		it('should have a data object', function() {
+			should.exist(Hoist.data);
+			Hoist.data.should.respondTo('defineModel');
 		});
-		it('should define the model as a class', function(){
-			new Hoist.Model().should.be.instanceof(Hoist.Model);
+		describe('creating a new model definition', function() {
+			var _modelDefinition;
+			before(function() {
+				_modelDefinition = Hoist.data.defineModel({});
+			});
+			it('should create a model definition object', function() {
+				_modelDefinition.should.be.instanceof(Hoist.data.ModelDefinition);
+			});
 		});
 	});
 });
