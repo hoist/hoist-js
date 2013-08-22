@@ -6,7 +6,8 @@ require.config({
     'heir': '../bower_components/heir/heir',
     'EventEmitter':'../bower_components/eventEmitter/EventEmitter',
     'superagent': '../bower_components/superagent/superagent',
-    'sinon':'../util/sinon'
+    'sinon':'../util/sinon',
+    'lodash':'../util/lodash'
   },
   shim:{
     sinon:{

@@ -1,6 +1,24 @@
 define(['Hoist', 'chai', 'superagent', 'sinon'], function(Hoist, chai, superagent, sinon) {
 	var should = chai.should();
 	'use strict';
+	describe('Auth#getTokensFromHeaders', function() {
+		describe('getting tokens from header array', function() {
+			var _result;
+			before(function() {
+				var headers = {
+					header1:"ABC",
+					"x-sso-data-hoi-io":"TOKEN",
+					"x-sso-other-url":"TOKEN2"
+				};
+				_result = Hoist.auth.getTokensFromHeaders(headers);
+			});
+			it("should generate the correct array",function(){
+				_result["data-hoi-io"].should.equal('TOKEN');
+				_result["other-url"].should.equal('TOKEN2');
+			});
+		});
+
+	});
 	describe('Hoist auth api', function() {
 		it('should have a login function', function() {
 			Hoist.auth.should.respondTo('login');
@@ -38,19 +56,20 @@ define(['Hoist', 'chai', 'superagent', 'sinon'], function(Hoist, chai, superagen
 				var apiKey = "APIKEY";
 				var username = "username";
 				var password = "password";
-				console.log(Hoist.auth.LoginEvent);
+
 				_listeners = Hoist.bus.getListeners(Hoist.auth.LoginEvent);
-				console.log(_listeners);
+
 				if (_listeners.length > 0) {
-					Hoist.bus.removeListeners(Hoist.auth.LoginEvent, _listeners)
+					Hoist.bus.removeListeners(Hoist.auth.LoginEvent, _listeners);
 				}
 				Hoist.bus.addListener(Hoist.auth.LoginEvent, _callbackListener);
 				Hoist.config.ApiKey = apiKey;
 				_server = sinon.fakeServer.create();
 				_server.respondWith('POST', 'https://auth.hoi.io/login', [200, {
-						"Content-Type": "application/json"
+						"Content-Type": "application/json",
+						"x-sso-data-hoi-io": "TOKEN"
 					},
-					'{}'
+					'{"UserName":"My User","EmailAddresses":["test@hoi.io"],"UserId":1}'
 				]);
 				Hoist.auth.login(username, password, done);
 				_server.respond();
@@ -66,8 +85,11 @@ define(['Hoist', 'chai', 'superagent', 'sinon'], function(Hoist, chai, superagen
 			it('should raise the login event', function() {
 				_eventWasRaised.should.equal(true);
 			});
-			it('should pass the response to the event was raised', function() {
-				_eventArgs.status.should.equal(200);
+			it('raised event arg should have user', function() {
+				_eventArgs.user.id.should.equal(1);
+			});
+			it('raised event args should have data token', function() {
+				_eventArgs.tokens["data-hoi-io"].should.equal("TOKEN");
 			});
 
 		});
