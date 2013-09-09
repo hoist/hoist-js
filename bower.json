@@ -17,7 +17,8 @@
   "dependencies": {
     "requirejs": "~2.1.8",
     "superagent": "~0.15.4",
-    "eventEmitter": "~4.2.3"
+    "eventEmitter": "~4.2.3",
+    "heir": "~1.0.1"
   },
   "devDependencies": {
     "chai": "~1.7.2",
