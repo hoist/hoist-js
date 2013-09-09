@@ -1,4 +1,4 @@
-define(['bus', 'config', 'exceptions', '../lib/superagent/superagent', '../util/lodash'], function(bus, config, exceptions, request, _) {
+define(['bus', 'config', 'exceptions', 'superagent', 'lodash'], function(bus, config, exceptions, request, _) {
 	var Auth = function() {
 
 		this.status = 'LoggedOut';
