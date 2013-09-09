@@ -56,27 +56,12 @@ module.exports = function(grunt) {
 				tasks: ['jshint', 'connect:server', 'mocha_phantomjs']
 			}
 		},
-		build: {
-			all: {
-				dest: "dist/hoist.js",
-				minimum: [
-					"core",
-					"selector"
-				],
-				// Exclude specified modules if the module matching the key is removed
-				removeWith: {
-					ajax: ["manipulation/_evalUrl"],
-					callbacks: ["deferred"],
-					css: ["effects", "dimensions", "offset"],
-					sizzle: ["css/hidden-visible-selectors", "effects/animated-selector"]
-				}
-			}
-		},
 		bower: {
 			install: {
 				//just run 'grunt bower:install' and you'll see files from your Bower packages in lib directory
 			}
-		}
+		},
+		requirejs:  grunt.file.readJSON('./build/build.settings.js')
 	});
 	grunt.loadNpmTasks('grunt-contrib-uglify');
 	grunt.loadNpmTasks('grunt-contrib-watch');
@@ -86,7 +71,7 @@ module.exports = function(grunt) {
 	grunt.loadNpmTasks('grunt-contrib-connect');
 	grunt.loadNpmTasks('grunt-nodemon');
 	grunt.loadNpmTasks('grunt-shell');
-
+	grunt.loadNpmTasks('grunt-contrib-requirejs');
 
 
 	grunt.registerTask("test", ['jshint', 'connect:server', 'mocha_phantomjs']);
