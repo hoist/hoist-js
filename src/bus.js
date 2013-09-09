@@ -1,4 +1,4 @@
-define(['EventEmitter','heir'], function(EventEmitter,heir) {
+define(['../lib/EventEmitter/EventEmitter','../lib/heir/heir'], function(EventEmitter,heir) {
 	var Bus = function() {
 		
 	};
