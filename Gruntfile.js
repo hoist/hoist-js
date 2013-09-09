@@ -15,7 +15,7 @@ module.exports = function(grunt) {
 		mocha_phantomjs: {
 			all: {
 				options: {
-					'reporter': 'spec',
+					reporter: grunt.option('reporter') || 'spec',
 					urls: [
 						'http://localhost:8000/testrunner.html'
 					]
@@ -30,11 +30,11 @@ module.exports = function(grunt) {
 					base: '.',
 				}
 			},
-			test:{
+			test: {
 				options: {
 					port: 8001,
 					base: '.',
-					keepalive:true
+					keepalive: true
 				}
 			}
 		},
@@ -65,21 +65,29 @@ module.exports = function(grunt) {
 				],
 				// Exclude specified modules if the module matching the key is removed
 				removeWith: {
-					ajax: [ "manipulation/_evalUrl" ],
-					callbacks: [ "deferred" ],
-					css: [ "effects", "dimensions", "offset" ],
-					sizzle: [ "css/hidden-visible-selectors", "effects/animated-selector" ]
+					ajax: ["manipulation/_evalUrl"],
+					callbacks: ["deferred"],
+					css: ["effects", "dimensions", "offset"],
+					sizzle: ["css/hidden-visible-selectors", "effects/animated-selector"]
 				}
 			}
 		},
+		bower: {
+			install: {
+				//just run 'grunt bower:install' and you'll see files from your Bower packages in lib directory
+			}
+		}
 	});
 	grunt.loadNpmTasks('grunt-contrib-uglify');
 	grunt.loadNpmTasks('grunt-contrib-watch');
 	grunt.loadNpmTasks('grunt-contrib-jshint');
+	grunt.loadNpmTasks('grunt-bower-task');
 	grunt.loadNpmTasks('grunt-mocha-phantomjs');
 	grunt.loadNpmTasks('grunt-contrib-connect');
 	grunt.loadNpmTasks('grunt-nodemon');
 	grunt.loadNpmTasks('grunt-shell');
 
-	grunt.registerTask( "test", [ 'jshint', 'connect:server', 'mocha_phantomjs'] );
+
+
+	grunt.registerTask("test", ['jshint', 'connect:server', 'mocha_phantomjs']);
 };

@@ -3,13 +3,15 @@ define([
 		'auth',
 		'bus',
 		'exceptions',
-		'config'
-		],function(data,auth,bus,exceptions,config){
+		'config',
+		'notifications'
+		],function(data,auth,bus,exceptions,config,notifications){
 	return {
 		data:data,
 		auth:auth,
 		bus:bus,
 		exceptions:exceptions,
-		config:config
+		config:config,
+		notifications:notifications
 	};
 });
