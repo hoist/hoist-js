@@ -33,7 +33,7 @@ define(['bus', 'config', 'exceptions', 'superagent', 'lodash'], function(bus, co
 				password: password
 			})
 			.set('Authorization', 'Hoist ' + config.ApiKey)
-			.set('Accept', 'applicaiton/json')
+			.set('Accept', 'application/json')
 			.end(function(error, res) {
 				if (error) {
 
