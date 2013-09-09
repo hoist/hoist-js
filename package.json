@@ -34,7 +34,9 @@
     "grunt-shell": "~0.3.1",
     "grunt-nodemon": "~0.1.0",
     "grunt-mocha-phantomjs": "~0.3.0",
-    "grunt-contrib-connect": "~0.3.0"
+    "grunt-contrib-connect": "~0.3.0",
+    "bower": "~1.2.6",
+    "grunt-bower-task": "~0.3.2"
   },
   "devDependencies": {
     "mocha-phantomjs": "~3.1.1",

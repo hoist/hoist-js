@@ -11,3 +11,4 @@ dist/.sizecache.json
 build/.sizecache.json
 node_modules
 bower_components
+lib
