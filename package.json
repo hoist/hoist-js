@@ -40,7 +40,7 @@
   },
   "devDependencies": {
     "mocha-phantomjs": "~3.1.1",
-    "phantomjs": "~1.9.1-8",
+    "phantomjs": "~1.9.1-9",
     "mocha": "~1.12.0"
   }
 }
