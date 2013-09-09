@@ -18,9 +18,9 @@ require.config({
 
 require([
   // FILE(S) BEING TESTED
-  'heir',
   '../tests/data/model_api_specs',
-  '../tests/auth/auth_api_specs'
+  '../tests/auth/auth_api_specs',
+  '../tests/notifications/notifications_api_specs'
 ], function() {
   // INITIALIZE THE RUN
   if (window.mochaPhantomJS) {

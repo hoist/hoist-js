@@ -1,6 +1,8 @@
 define(['Hoist', 'chai'], function(Hoist, chai) {
-	var should = chai.should();
 	'use strict';
+	
+	var should = chai.should();
+	
 	describe('Hoist api', function() {
 		it('should have a data object', function() {
 			should.exist(Hoist.data);

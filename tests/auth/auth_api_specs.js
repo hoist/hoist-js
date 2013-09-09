@@ -1,6 +1,9 @@
 define(['Hoist', 'chai', 'superagent', 'sinon'], function(Hoist, chai, superagent, sinon) {
-	var should = chai.should();
+	
 	'use strict';
+	
+	var should = chai.should();
+	
 	describe('Auth#getTokensFromHeaders', function() {
 		describe('getting tokens from header array', function() {
 			var _result;
