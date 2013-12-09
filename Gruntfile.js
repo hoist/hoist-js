@@ -21,7 +21,6 @@ module.exports = function(grunt) {
 					]
 				}
 			}
-
 		},
 		connect: {
 			server: {
@@ -40,7 +39,8 @@ module.exports = function(grunt) {
 		},
 		jshint: {
 			options: {
-				laxcomma: true
+				laxcomma: true,
+				expr: true
 			},
 			tests: {
 				options: {
@@ -63,6 +63,7 @@ module.exports = function(grunt) {
 		},
 		requirejs:  grunt.file.readJSON('./build/build.settings.js')
 	});
+
 	grunt.loadNpmTasks('grunt-contrib-uglify');
 	grunt.loadNpmTasks('grunt-contrib-watch');
 	grunt.loadNpmTasks('grunt-contrib-jshint');
@@ -75,4 +76,6 @@ module.exports = function(grunt) {
 
 
 	grunt.registerTask("test", ['jshint', 'connect:server', 'mocha_phantomjs']);
+	grunt.registerTask("default", ['jshint']);
+
 };
