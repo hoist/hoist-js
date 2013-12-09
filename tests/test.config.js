@@ -1,7 +1,6 @@
 require.config({
   baseUrl: '/src',
   paths: {
-    'Hoist': 'index',
     'chai': '../lib/chai/chai',
     'heir': '../lib/heir/heir',
     'EventEmitter':'../lib/eventEmitter/EventEmitter',
