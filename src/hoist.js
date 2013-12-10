@@ -1,7 +1,8 @@
-var Hoist = (function (u) {
+var Hoist = (function () {
 	var configs = {},
 		user,
-		toString = Object.prototype.toString;
+		toString = Object.prototype.toString,
+		u;
 		
 	function extend(into, from) {
 		for (var x in from) into[x] = from[x];
@@ -84,7 +85,7 @@ var Hoist = (function (u) {
 	
 	extend(DataManager.prototype, {
 		get: function (id, success, error, context) {
-			if (typeof id === "function") {
+			if (typeof id === "function" || id === undefined) {
 				context = error;
 				error = success;
 				success = id;
@@ -166,7 +167,10 @@ var Hoist = (function (u) {
 		},
 		
 		status: function (success, error, context) {
-			request("https://auth.hoi.io/status", success, error, context);
+			request("https://auth.hoi.io/status", function (resp) {
+				user = resp;
+				success && success.apply(this, arguments);
+			}, error, context);
 		},
 		
 		signup: function (member, success, error, context) {
