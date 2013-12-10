@@ -89,7 +89,25 @@ var Hoist = (function (u) {
 				error = success;
 				success = id;
 				
-				request(this.url, success, error, context);
+				var manager = this;
+				
+				request(this.url, function (resp) {
+					for (var i = 0; i < resp.length; i++) {
+						manager[i] = resp[i];
+					}
+					
+					if (manager.length) {
+						// clean up memory
+						
+						for (var i = resp.length; i < manager.length; i++) {
+							delete manager[i];
+						}
+					}
+					
+					manager.length = resp.length;
+					
+					success && success.apply(this, arguments);
+				}, error, context);
 			} else {
 				request(this.url + "/" + id, success, error, context);
 			}
@@ -122,6 +140,14 @@ var Hoist = (function (u) {
 		apiKey: function (v) {
 			return this.config("apikey", v);
 		},
+		
+		get: function (type, id, success, error, context) {
+			Hoist(type).get(id, success, error, context);
+		},
+		
+		post: function (type, id, data, success, error, context) {
+			Hoist(type).post(id, data, success, error, context);
+		},
 	
 		config: function (a, b) {
 			if (b === u) {
@@ -147,7 +173,7 @@ var Hoist = (function (u) {
 			if (typeof member === "object") {
 				request("https://auth.hoi.io/user", member, function (resp) {
 					user = resp;
-					success.apply(this, arguments);
+					success && success.apply(this, arguments);
 				}, error, context);
 			}
 		},
@@ -156,9 +182,13 @@ var Hoist = (function (u) {
 			if (typeof member === "object") {
 				request("https://auth.hoi.io/login", member, function (resp) {
 					user = resp;
-					success.apply(this, arguments);
+					success && success.apply(this, arguments);
 				}, error, context);
 			}
+		},
+		
+		user: function () {
+			return user;
 		},
 		
 		notify: function (id, data, success, error, context) {
