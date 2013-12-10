@@ -90,25 +90,7 @@ var Hoist = (function () {
 				error = success;
 				success = id;
 				
-				var manager = this;
-				
-				request(this.url, function (resp) {
-					for (var i = 0; i < resp.length; i++) {
-						manager[i] = resp[i];
-					}
-					
-					if (manager.length) {
-						// clean up memory
-						
-						for (var i = resp.length; i < manager.length; i++) {
-							delete manager[i];
-						}
-					}
-					
-					manager.length = resp.length;
-					
-					success && success.apply(this, arguments);
-				}, error, context);
+				request(this.url, success, error, context);
 			} else {
 				request(this.url + "/" + id, success, error, context);
 			}
