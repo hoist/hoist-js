@@ -14,30 +14,24 @@ var Hoist = (function () {
 	
 	// ajax helper
 	
-	function request(url, data, success, error, context) {
-		var type = classOf(data),
-			method,
+	function request(opts, success, error, context) {
+		var method,
 			contentType;
+
+		if ("data" in opts) {
+			var type = classOf(opts.data);
 		
-		if (type === "Object") {
-			method = "POST";
-			contentType = "application/json";
-			data = JSON.stringify(data);
-		} else if (type === "String") {
-			method = "POST";
-			contentType = "application/json";
-		} else if (type === "FormData") {
-			method = "POST";
-			contentType = "multipart/form-data";
-		} else if (type === "File") {
-			method = "POST";
-			contentType = data.type;
+			if (type === "String") {
+				contentType = "application/json";
+			} else if (type === "FormData") {
+				method = "POST";
+			} else {
+				method = "POST";
+				contentType = "application/json";
+				opts.data = JSON.stringify(opts.data);
+			}
 		} else {
 			method = "GET";
-			context = error;
-			error = success;
-			success = data;
-			data = null;
 		}
 		
 		if (typeof error !== "function") {
@@ -53,11 +47,10 @@ var Hoist = (function () {
 		
 		var xhr = new XMLHttpRequest();
 		
-		xhr.open(method, url);
+		xhr.open(method, opts.url);
 		
-		if (method === "POST") {
-			xhr.setRequestHeader("Content-Type", contentType);
-		}
+		xhr.responseType = opts.responseType || "json";
+		contentType && xhr.setRequestHeader("Content-Type", contentType);
 		
 		xhr.setRequestHeader("Authorization", "Hoist " + configs.apikey);
 		
@@ -66,14 +59,18 @@ var Hoist = (function () {
 		xhr.onreadystatechange = function () {
 			if (xhr.readyState === 4) {
 				if (xhr.status >= 200 && xhr.status < 300) {
-					success && success.call(context, JSON.parse(xhr.responseText), xhr);
+					if (typeof xhr.response === "string" && xhr.responseType === "json") {
+						success && success.call(context, JSON.parse(xhr.response), xhr);
+					} else {
+						success && success.call(context, xhr.response, xhr);
+					}
 				} else {
 					error && error.call(context, xhr.statusText, xhr);
 				}
 			}
 		};
 		
-		xhr.send(data);
+		xhr.send(opts.data);
 	}
 	
 	var managers = {};
@@ -90,9 +87,9 @@ var Hoist = (function () {
 				error = success;
 				success = id;
 				
-				request(this.url, success, error, context);
+				request({ url: this.url }, success, error, context);
 			} else {
-				request(this.url + "/" + id, success, error, context);
+				request({ url: this.url + "/" + id }, success, error, context);
 			}
 		},
 		
@@ -106,12 +103,12 @@ var Hoist = (function () {
 				if (data.x_id) {
 					id = data.x_id;
 				} else {
-					request(this.url, data, success, error, context);
+					request({ url: this.url, data: data }, success, error, context);
 					return;
 				}
 			}
 			
-			request(this.url + "/" + id, data, success, error, context);
+			request({ url: this.url + "/" + id, data: data }, success, error, context);
 		}
 	});
 
@@ -149,7 +146,7 @@ var Hoist = (function () {
 		},
 		
 		status: function (success, error, context) {
-			request("https://auth.hoi.io/status", function (resp) {
+			request({ url: "https://auth.hoi.io/status" }, function (resp) {
 				user = resp;
 				success && success.apply(this, arguments);
 			}, error, context);
@@ -157,7 +154,7 @@ var Hoist = (function () {
 		
 		signup: function (member, success, error, context) {
 			if (typeof member === "object") {
-				request("https://auth.hoi.io/user", member, function (resp) {
+				request({ url: "https://auth.hoi.io/user", data: member }, function (resp) {
 					user = resp;
 					success && success.apply(this, arguments);
 				}, error, context);
@@ -166,7 +163,7 @@ var Hoist = (function () {
 		
 		login: function (member, success, error, context) {
 			if (typeof member === "object") {
-				request("https://auth.hoi.io/login", member, function (resp) {
+				request({ url: "https://auth.hoi.io/login", data: member }, function (resp) {
 					user = resp;
 					success && success.apply(this, arguments);
 				}, error, context);
@@ -187,7 +184,7 @@ var Hoist = (function () {
 			}
 			
 			if (typeof data === "object") {
-				request("https://notify.hoi.io/notification/" + id, data, success, error, context);
+				request({ url: "https://notify.hoi.io/notification/" + id, data: data }, success, error, context);
 			}
 		},
 		
@@ -213,17 +210,17 @@ var Hoist = (function () {
 				context = error;
 				error = success;
 				success = file;
-			
-				request("https://file.hoi.io/" + key, success, error, context);
+
+				request({ url: "https://file.hoi.io/" + key, responseType: "blob" }, success, error, context);
 				return;
 			} else if (type === "Undefined") {
-				request("https://file.hoi.io/" + key, success, error, context);
+				request({ url: "https://file.hoi.io/" + key, responseType: "blob" }, success, error, context);
 				return;
 			} else {
 				return;
 			}
 			
-			request("https://file.hoi.io/" + key, data, success, error, context);
+			request({ url: "https://file.hoi.io/" + key, data: data }, success, error, context);
 		}
 	});
 	
