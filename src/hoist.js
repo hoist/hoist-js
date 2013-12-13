@@ -100,8 +100,8 @@ var Hoist = (function () {
 				success = data;
 				data = id;
 				
-				if (data.x_id) {
-					id = data.x_id;
+				if (data._id) {
+					id = data._id;
 				} else {
 					request({ url: this.url, data: data }, success, error, context);
 					return;

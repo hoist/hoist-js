@@ -31,7 +31,7 @@
 	fish.get([...])
 	//For one item by id
 	fish.get(id, [...])
-	//Will create if data doesn't have x_id, or else update
+	//Will create if data doesn't have _id, or else update
 	fish.post(data, [...])
 	fish.post(id, data, [...])
 
