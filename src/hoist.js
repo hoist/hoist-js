@@ -42,6 +42,8 @@ var Hoist = (function () {
 			error && setTimeout(function () {
 				error.call(context, "API key not set", null); 
 			}, 0);
+			
+			return;
 		}
 		
 		var xhr = new XMLHttpRequest();
