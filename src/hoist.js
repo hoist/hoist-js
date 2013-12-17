@@ -146,9 +146,12 @@ var Hoist = (function () {
 		},
 		
 		status: function (success, error, context) {
-			request({ url: "https://auth.hoi.io/status" }, function (resp) {
-				user = resp;
-				success && success.apply(this, arguments);
+			request({ url: "https://auth.hoi.io/status" }, function (resp, xhr) {
+				// normalise response to that returned by /user and /login
+				
+				user = { id: resp._id, role: resp.role };
+				
+				success && success.call(this, user, xhr);
 			}, error, context);
 		},
 		
