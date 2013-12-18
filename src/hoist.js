@@ -105,7 +105,10 @@ var Hoist = (function () {
 				if (data._id) {
 					id = data._id;
 				} else {
-					request({ url: this.url, data: data }, success, error, context);
+					request({ url: this.url, data: data }, success && function (resp, xhr) {
+						success.call(this, resp[0], xhr);
+					}, error, context);
+					
 					return;
 				}
 			}
