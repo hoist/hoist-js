@@ -2,6 +2,7 @@ var Hoist = (function () {
 	var configs = {},
 		user,
 		toString = Object.prototype.toString,
+		splice = Array.prototype.splice,
 		u;
 		
 	function extend(into, from) {
@@ -10,6 +11,16 @@ var Hoist = (function () {
 	
 	function classOf(data) {
 		return toString.call(data).slice(8, -1);
+	}
+	
+	function asyncError(error, context) {
+		if (typeof error !== "function") return;
+		
+		var args = splice.call(arguments, 2);
+		
+		setTimeout(function () {
+			error.apply(context, args);
+		}, 0);
 	}
 	
 	// ajax helper
@@ -30,7 +41,7 @@ var Hoist = (function () {
 				opts.data = JSON.stringify(opts.data);
 			}
 		} else {
-			method = "GET";
+			method = opts.method || "GET";
 		}
 		
 		if (typeof error !== "function") {
@@ -39,11 +50,7 @@ var Hoist = (function () {
 		}
 		
 		if (!configs.apikey) {
-			error && setTimeout(function () {
-				error.call(context, "API key not set", null); 
-			}, 0);
-			
-			return;
+			return asyncError(error, context, "API key not set", null);
 		}
 		
 		var xhr = new XMLHttpRequest();
@@ -114,6 +121,18 @@ var Hoist = (function () {
 			}
 			
 			request({ url: this.url + "/" + id, data: data }, success, error, context);
+		},
+		
+		clear: function (success, error, context) {
+			request({ url: this.url, method: "DELETE" }, success, error, context);
+		},
+		
+		remove: function (id, success, error, context) {
+			if (!id) {
+				return asyncError(error, context, "Cannot remove model with empty id", null);
+			}
+		
+			request({ url: this.url + "/" + id, method: "DELETE" }, success, error, context);
 		}
 	});
 
@@ -132,6 +151,14 @@ var Hoist = (function () {
 		
 		post: function (type, id, data, success, error, context) {
 			Hoist(type).post(id, data, success, error, context);
+		},
+		
+		clear: function (type, success, error, context) {
+			Hoist(type).clear(success, error, context);
+		},
+		
+		remove: function (type, id, success, error, context) {
+			Hoist(type).remove(id, success, error, context);
 		},
 	
 		config: function (a, b) {
