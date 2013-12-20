@@ -45,7 +45,7 @@ var Hoist = (function () {
 		}
 		
 		if (typeof error !== "function") {
-			context = error;
+			if (!context) context = error;
 			error = null;
 		}
 		
