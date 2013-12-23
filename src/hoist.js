@@ -67,8 +67,6 @@ var Hoist = (function () {
 		
 		xhr.onreadystatechange = function () {
 			if (xhr.readyState === 4) {
-				console.log(xhr);
-			
 				if (xhr.status >= 200 && xhr.status < 400) {
 					if (typeof xhr.response === "string" && responseType === "json") {
 						success && success.call(context, JSON.parse(xhr.response), xhr);
