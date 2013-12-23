@@ -67,7 +67,9 @@ var Hoist = (function () {
 		
 		xhr.onreadystatechange = function () {
 			if (xhr.readyState === 4) {
-				if (xhr.status >= 200 && xhr.status < 300) {
+				console.log(xhr);
+			
+				if (xhr.status >= 200 && xhr.status < 400) {
 					if (typeof xhr.response === "string" && responseType === "json") {
 						success && success.call(context, JSON.parse(xhr.response), xhr);
 					} else {
@@ -178,12 +180,9 @@ var Hoist = (function () {
 		},
 		
 		status: function (success, error, context) {
-			request({ url: "https://auth.hoi.io/status" }, function (resp, xhr) {
-				// normalise response to that returned by /user and /login
-				
-				user = { id: resp._id, role: resp.role };
-				
-				success && success.call(this, user, xhr);
+			request({ url: "https://auth.hoi.io/status" }, function (resp) {
+				user = resp;
+				success && success.apply(this, arguments);
 			}, error, context);
 		},
 		
