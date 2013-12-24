@@ -202,6 +202,10 @@ var Hoist = (function () {
 			}
 		},
 		
+		logout: function (success, error, context) {
+			request({ url: "https://auth.hoi.io/logout", method: "POST" }, success, error, context);
+		},
+		
 		user: function () {
 			return user;
 		},
