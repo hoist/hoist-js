@@ -5,8 +5,25 @@ var Hoist = (function () {
 		splice = Array.prototype.splice,
 		u;
 		
+	// helpers
+
 	function extend(into, from) {
 		for (var x in from) into[x] = from[x];
+	}
+		
+	function get(obj, key, nothing) {
+		 if (key.indexOf('.') == -1) {
+		 	return obj[key];
+		 } else {
+		 	key = key.split('.');
+		 	
+		 	for (var i = 0; i < key.length - 1; i++) {
+		 		obj = obj[key[i]];
+		 		if (!obj) return "";
+		 	}
+		 	
+		 	return obj[key[i]];
+		 }
 	}
 	
 	function classOf(data) {
@@ -84,6 +101,8 @@ var Hoist = (function () {
 	
 	var managers = {};
 	
+	// simple data manager
+	
 	function DataManager(type) {
 		this.type = type;
 		this.url = "https://data.hoi.io/" + type;
@@ -135,9 +154,102 @@ var Hoist = (function () {
 			request({ url: this.url + "/" + id, method: "DELETE" }, success, error, context);
 		}
 	});
+	
+	// complex data manager
+	
+	var tagRegex = /\[([^\]]+)\]/g;
+
+	function ObjectDataManager(hash) {
+		var items = this.items = {};
+
+		for (var x in hash) {
+			var item = { key: x, path: hash[x], requires: [] },
+				match;
+		
+			while (match = tagRegex.exec(item.path)) {
+				var dot = match[1].indexOf('.');
+			
+				if (dot == -1) {
+					throw "Malformed tag " + match[0];
+				} else {
+					item.requires.push(match[1].slice(0, dot));
+				}
+			}
+	
+			items[x] = item;
+		}
+	}
+	
+	extend(ObjectDataManager.prototype, {
+		get: function (success, error, context) {
+			var items = {},
+				result = {},
+				managers = {},
+				failed;
+			
+			extend(items, this.items);
+			
+			if (typeof error !== "function") {
+				if (!context) context = error;
+				error = null;
+			}
+		
+			function succeed(key) {
+				return function (data) {
+					result[key] = data;
+					delete items[key];
+					advance();
+				};
+			}
+			
+			function fail(key) {
+				return function (msg, xhr) {
+					failed = true;
+					error && error.call(context, key + ": " + msg, xhr);
+				};
+			}
+	
+			function advance() {
+				if (failed) return;
+			
+				var loading = 0;
+				
+				out: for (var x in items) {
+					var item = items[x];
+			
+					if (!managers[x]) {
+						for (var i = 0; i < item.requires.length; i++) {
+							if (item.requires[i] in items) {
+								continue out;
+							}
+						}
+				
+						var path = item.path.replace(tagRegex, function (a, b) { return get(result, b); }),
+							space = path.indexOf(' ');
+
+						if (space > -1) {
+							(managers[item.key] = Hoist(path.slice(0, space))).get(path.slice(space + 1), succeed(item.key), fail(item.key));
+						} else {
+							(managers[item.key] = Hoist(path)).get(succeed(item.key), fail(item.key));
+						}
+					}
+					
+					loading++;
+				}
+			
+				if (!loading) success.call(context, result, managers);
+			}
+			
+			advance();
+		}
+	});
 
 	Hoist = function (type) {
-		return managers[type] || (managers[type] = new DataManager(type));
+		if (classOf(type) === "Object") {
+			return new ObjectDataManager(type);
+		} else {
+			return managers[type] || (managers[type] = new DataManager(type));
+		}
 	};
 	
 	extend(Hoist, {
