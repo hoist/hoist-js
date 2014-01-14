@@ -171,9 +171,7 @@ var Hoist = (function () {
 			while (match = tagRegex.exec(item.path)) {
 				var dot = match[1].indexOf('.');
 			
-				if (dot == -1) {
-					throw "Malformed tag " + match[0];
-				} else {
+				if (dot > -1) {
 					item.requires.push(match[1].slice(0, dot));
 				}
 			}
@@ -183,11 +181,20 @@ var Hoist = (function () {
 	}
 	
 	extend(ObjectDataManager.prototype, {
-		get: function (success, error, context) {
+		get: function (data, success, error, context) {
 			var items = {},
 				result = {},
 				managers = {},
 				failed;
+				
+			if (typeof data === "function") {
+				context = error;
+				error = success;
+				success = data;
+				data = {};
+			} else if (typeof data === "string") {
+				data = { id: data };
+			}
 			
 			extend(items, this.items);
 			
@@ -226,7 +233,13 @@ var Hoist = (function () {
 							}
 						}
 				
-						var path = item.path.replace(tagRegex, function (a, b) { return get(result, b); }),
+						var path = item.path.replace(tagRegex, function (a, b) {
+								if (b.indexOf('.') > -1) {
+									return get(result, b);
+								} else {
+									return data[b] || "";
+								}
+							}),
 							space = path.indexOf(' ');
 
 						if (space > -1) {
