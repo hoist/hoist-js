@@ -123,6 +123,8 @@ var Hoist = (function () {
 		
 		post: function (id, data, success, error, context) {
 			if (typeof id === "object") {
+				var multiple = classOf(id) === "Array";
+			
 				context = error;
 				error = success;
 				success = data;
@@ -132,7 +134,7 @@ var Hoist = (function () {
 					id = data._id;
 				} else {
 					request({ url: this.url, data: data }, success && function (resp, xhr) {
-						success.call(this, resp[0], xhr);
+						success.call(this, multiple ? resp : resp[0], xhr);
 					}, error, context);
 					
 					return;

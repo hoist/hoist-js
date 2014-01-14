@@ -36,9 +36,10 @@ Use `Hoist.status(…)` to check whether the user is logged in:
 		console.log("Truly I tell you, I do not know you.");
 	});
 
-To log the user in or to create a new user, use the following, respectively:
+To log the user in or out or to create a new user, use the following, respectively:
 
 	Hoist.login({ email: "bob@invalid", password: "password"}, …)
+	Hoist.logout(…)
 	Hoist.signup({ email: "bob@invalid", password: "password"}, …)
 	
 After any of these methods has been successfully called, the library will remember the user object returned. This can be accessed by calling `Hoist.user()`.
@@ -62,8 +63,10 @@ The data methods can be used in two ways. A "data manager" can be created by pas
 	});
 	
 	// save an object; the object returned will have an _id parameter.
-	// anything passed to this method with an _id parameter will
-	// overwriting the object with the given id.
+	// anything passed to this method with an _id parameter will overwrite
+	// the object with the given id.
+	
+	// You can post multiple objects by passing an array instead.
 	
 	projects.post({
 		name: "Cool Project",
