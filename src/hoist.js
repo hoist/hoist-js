@@ -74,7 +74,13 @@ var Hoist = (function () {
 		
 		xhr.open(method, opts.url);
 		
-		xhr.responseType = responseType = opts.responseType || "json";
+		responseType = opts.responseType || "json";
+		
+		// Safari will error out (!) if we try to set a responseType of "json"
+		
+		if (responseType != "json") {
+			xhr.responseType = responseType;
+		}
 		
 		contentType && xhr.setRequestHeader("Content-Type", contentType);
 		
