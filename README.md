@@ -119,3 +119,37 @@ To send the notification with template id `id`, populated with the data `data`, 
 
 	Hoist.notify(id, data, …)
 	Hoist.notify({id: id, data: data}, …)
+
+## Aggregating data calls
+
+If your project is of a decent size, you will probably find that on page load you are getting a bunch of models of different types in a fairly straightforward fashion. Instead of nesting a bunch of callbacks, you can provide the `Hoist` function with a hash instead of a model type. For example, if you want to load all models of type "article" and "section", you can use:
+
+	Hoist({
+		articles: "article",
+		sections: "section"
+	}).get(function (data) {
+		doArticleStuff(data.articles);
+		doSectionStuff(data.sections);
+	});
+	
+Single models can be retrieved in this way by setting the value in the hash to be the model type and the model id, separated by a space:
+
+	Hoist.get({
+		membership: "membership 63688436-9bd4-4fc6-8c2c-ab3398ec2961",
+		companies: "company"
+	}, function (data) {
+		// do the things
+	});
+
+If the type or id of one model being retrieved depends on the property of another, use square brackets to indicate these dependencies, and the library will make sure to request the data in the right order, then swap out the tags before making the calls. You can also provide a string (accessible as `[id]`) or hash as the first argument of the `get(…)` function as additional context. This allows things like:
+
+	var allData = Hoist({
+		membership: "membership [_id]",
+		companies: "[membership.organisationId]-company"
+	});
+
+	Hoist.status(function (user) {
+		allData.get(user, function (data) {
+		  // do the things
+		});
+	});
