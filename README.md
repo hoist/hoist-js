@@ -145,7 +145,8 @@ If the type or id of one model being retrieved depends on the property of anothe
 
 	var allData = Hoist({
 		membership: "membership [_id]",
-		companies: "[membership.organisationId]-company"
+		company: "company [membership.companyId]",
+		employees: "[company._id]-employee"
 	});
 
 	Hoist.status(function (user) {
