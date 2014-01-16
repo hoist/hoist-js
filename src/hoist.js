@@ -80,6 +80,12 @@ var Hoist = (function () {
 		
 		if (responseType != "json") {
 			xhr.responseType = responseType;
+			
+			// Safari before 6.1 does not support "blob" but does support "arraybuffer"
+			
+			if (responseType == "blob" && xhr.responseType != "blob") {
+				xhr.responseType = "arraybuffer";
+			}
 		}
 		
 		contentType && xhr.setRequestHeader("Content-Type", contentType);
@@ -91,11 +97,16 @@ var Hoist = (function () {
 		xhr.onreadystatechange = function () {
 			if (xhr.readyState === 4) {
 				if (xhr.status >= 200 && xhr.status < 400) {
-					if (typeof xhr.response === "string" && responseType === "json") {
-						success && success.call(context, JSON.parse(xhr.response), xhr);
-					} else {
-						success && success.call(context, xhr.response, xhr);
+					var response = xhr.response,
+						type = classOf(response);
+				
+					if (type === "String" && responseType === "json") {
+						response = JSON.parse(xhr.response);
+					} else if (type === "ArrayBuffer" && responseType === "blob") {
+						response = new Blob([xhr.response]);
 					}
+					
+					success && success.call(context, response, xhr);
 				} else {
 					error && error.call(context, xhr.statusText, xhr);
 				}
