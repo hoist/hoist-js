@@ -141,7 +141,7 @@ Single models can be retrieved in this way by setting the value in the hash to b
 		// do the things
 	});
 
-If the type or id of one model being retrieved depends on the property of another, use square brackets to indicate these dependencies, and the library will make sure to request the data in the right order, then swap out the tags before making the calls. You can also provide a string (accessible as `[id]`) or hash (accessible through its parameter names) as the first argument of the `get(…)` function as additional context. This allows things like:
+If the type or id of one model being retrieved depends on the property of another, use square brackets to indicate these dependencies, and the library will make sure to request the data in the right order, then swap out the tags before making the calls. You can also provide a string (accessible as `[id]`) or hash (accessible through its property names) as the first argument of the `get(…)` function as additional context. This allows things like:
 
 	var allData = Hoist({
 		membership: "membership [id]",
