@@ -1,3 +1,4 @@
+/*jshint loopfunc: true */
 var Hoist = (function () {
 	var configs = {
 			protocol: "https://"
@@ -14,18 +15,18 @@ var Hoist = (function () {
 	}
 		
 	function get(obj, key, nothing) {
-		 if (key.indexOf('.') == -1) {
-		 	return obj[key];
-		 } else {
-		 	key = key.split('.');
-		 	
-		 	for (var i = 0; i < key.length - 1; i++) {
-		 		obj = obj[key[i]];
-		 		if (!obj) return "";
-		 	}
-		 	
-		 	return obj[key[i]];
-		 }
+		if (key.indexOf('.') == -1) {
+			return obj[key];
+		} else {
+			key = key.split('.');
+			
+			for (var i = 0; i < key.length - 1; i++) {
+				obj = obj[key[i]];
+				if (!obj) return "";
+			}
+			
+			return obj[key[i]];
+		}
 	}
 	
 	function classOf(data) {
@@ -186,13 +187,13 @@ var Hoist = (function () {
 		for (var x in hash) {
 			var item = { key: x, path: hash[x], requires: [] },
 				match;
-				
+
 			if (item.path[item.path.length - 1] == '?') {
 				item.path = item.path.slice(0, -1);
 				item.optional = true;
 			}
-		
-			while (match = tagRegex.exec(item.path)) {
+
+			while ((match = tagRegex.exec(item.path)) !== null) {
 				var dot = match[1].indexOf('.');
 			
 				if (dot > -1) {
