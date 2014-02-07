@@ -1,5 +1,7 @@
 var Hoist = (function () {
-	var configs = {},
+	var configs = {
+			protocol: "https://"
+		},
 		user,
 		toString = Object.prototype.toString,
 		splice = Array.prototype.splice,
@@ -72,7 +74,7 @@ var Hoist = (function () {
 		
 		var xhr = new XMLHttpRequest();
 		
-		xhr.open(method, opts.url);
+		xhr.open(method, configs.protocol + opts.url);
 		
 		responseType = opts.responseType || "json";
 		
@@ -122,7 +124,7 @@ var Hoist = (function () {
 	
 	function DataManager(type) {
 		this.type = type;
-		this.url = "https://data.hoi.io/" + type;
+		this.url = "data.hoi.io/" + type;
 	}
 	
 	extend(DataManager.prototype, {
@@ -184,6 +186,11 @@ var Hoist = (function () {
 		for (var x in hash) {
 			var item = { key: x, path: hash[x], requires: [] },
 				match;
+				
+			if (item.path[item.path.length - 1] == '?') {
+				item.path = item.path.slice(0, -1);
+				item.optional = true;
+			}
 		
 			while (match = tagRegex.exec(item.path)) {
 				var dot = match[1].indexOf('.');
@@ -230,8 +237,12 @@ var Hoist = (function () {
 			
 			function fail(key) {
 				return function (msg, xhr) {
-					failed = true;
-					error && error.call(context, key + ": " + msg, xhr);
+					if (items[key].optional) {
+						succeed(key)(null);
+					} else {
+						failed = true;
+						error && error.call(context, key + ": " + msg, xhr);
+					}
 				};
 			}
 	
@@ -322,7 +333,7 @@ var Hoist = (function () {
 		},
 		
 		status: function (success, error, context) {
-			request({ url: "https://auth.hoi.io/status" }, function (resp) {
+			request({ url: "auth.hoi.io/status" }, function (resp) {
 				user = resp;
 				success && success.apply(this, arguments);
 			}, error, context);
@@ -330,7 +341,7 @@ var Hoist = (function () {
 		
 		signup: function (member, success, error, context) {
 			if (typeof member === "object") {
-				request({ url: "https://auth.hoi.io/user", data: member }, function (resp) {
+				request({ url: "auth.hoi.io/user", data: member }, function (resp) {
 					user = resp;
 					success && success.apply(this, arguments);
 				}, error, context);
@@ -339,7 +350,7 @@ var Hoist = (function () {
 		
 		login: function (member, success, error, context) {
 			if (typeof member === "object") {
-				request({ url: "https://auth.hoi.io/login", data: member }, function (resp) {
+				request({ url: "auth.hoi.io/login", data: member }, function (resp) {
 					user = resp;
 					success && success.apply(this, arguments);
 				}, error, context);
@@ -347,7 +358,7 @@ var Hoist = (function () {
 		},
 		
 		logout: function (success, error, context) {
-			request({ url: "https://auth.hoi.io/logout", method: "POST" }, success, error, context);
+			request({ url: "auth.hoi.io/logout", method: "POST" }, success, error, context);
 		},
 		
 		user: function () {
@@ -364,7 +375,7 @@ var Hoist = (function () {
 			}
 			
 			if (typeof data === "object") {
-				request({ url: "https://notify.hoi.io/notification/" + id, data: data }, success, error, context);
+				request({ url: "notify.hoi.io/notification/" + id, data: data }, success, error, context);
 			}
 		},
 		
@@ -391,16 +402,16 @@ var Hoist = (function () {
 				error = success;
 				success = file;
 
-				request({ url: "https://file.hoi.io/" + key, responseType: "blob" }, success, error, context);
+				request({ url: "file.hoi.io/" + key, responseType: "blob" }, success, error, context);
 				return;
 			} else if (type === "Undefined") {
-				request({ url: "https://file.hoi.io/" + key, responseType: "blob" }, success, error, context);
+				request({ url: "file.hoi.io/" + key, responseType: "blob" }, success, error, context);
 				return;
 			} else {
 				return;
 			}
 			
-			request({ url: "https://file.hoi.io/" + key, data: data }, success, error, context);
+			request({ url: "file.hoi.io/" + key, data: data }, success, error, context);
 		}
 	});
 	
