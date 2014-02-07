@@ -100,13 +100,13 @@ var Hoist = (function () {
 		xhr.onreadystatechange = function () {
 			if (xhr.readyState === 4) {
 				if (xhr.status >= 200 && xhr.status < 400) {
-					var response = xhr.response,
+					var response = xhr.response || xhr.responseText,
 						type = classOf(response);
 				
 					if (type === "String" && responseType === "json") {
-						response = JSON.parse(xhr.response);
+						response = JSON.parse(response);
 					} else if (type === "ArrayBuffer" && responseType === "blob") {
-						response = new Blob([xhr.response]);
+						response = new Blob([response]);
 					}
 					
 					success && success.call(context, response, xhr);
