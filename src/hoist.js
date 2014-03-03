@@ -422,13 +422,15 @@ var Hoist = (function () {
 })();
 
 
-if (typeof define === "function" && define.amd) {
-	define("Hoist", [], function() {
-		return Hoist;
-	});
+if ( typeof module === "object" && module && typeof module.exports === "object" ) {
+	module.exports = Hoist;
+} else {
+	if ( typeof define === "function" && define.amd ) {
+		define( "Hoist", [], function () { return Hoist; } );
+	}
 }
-else
-{
-	//put hoist on the global namespace
+
+//put hoist on the global namespace
+if ( typeof window === "object" && typeof window.document === "object" ) {
 	window.Hoist = Hoist;
 }
