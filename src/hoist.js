@@ -1,10 +1,6 @@
 /*jshint loopfunc: true */
-var Hoist = (function () {
-	var configs = {
-			protocol: "https://"
-		},
-		user,
-		toString = Object.prototype.toString,
+(function () {
+	var toString = Object.prototype.toString,
 		splice = Array.prototype.splice,
 		u;
 		
@@ -12,6 +8,7 @@ var Hoist = (function () {
 
 	function extend(into, from) {
 		for (var x in from) into[x] = from[x];
+		return into;
 	}
 		
 	function get(obj, key, nothing) {
@@ -45,7 +42,7 @@ var Hoist = (function () {
 	
 	// ajax helper
 	
-	function request(opts, success, error, context) {
+	function request(configs, opts, success, error, context) {
 		var method, contentType, responseType;
 
 		if ("data" in opts) {
@@ -119,13 +116,12 @@ var Hoist = (function () {
 		xhr.send(opts.data);
 	}
 	
-	var managers = {};
-	
 	// simple data manager
 	
-	function DataManager(type) {
+	function DataManager(hoist, type) {
 		this.type = type;
 		this.url = "data.hoi.io/" + type;
+		this.hoist = hoist;
 	}
 	
 	extend(DataManager.prototype, {
@@ -135,9 +131,9 @@ var Hoist = (function () {
 				error = success;
 				success = id;
 				
-				request({ url: this.url }, success, error, context);
+				request(this.hoist._configs, { url: this.url }, success, error, context);
 			} else {
-				request({ url: this.url + "/" + id }, success, error, context);
+				request(this.hoist._configs, { url: this.url + "/" + id }, success, error, context);
 			}
 		},
 		
@@ -153,7 +149,7 @@ var Hoist = (function () {
 				if (data._id) {
 					id = data._id;
 				} else {
-					request({ url: this.url, data: data }, success && function (resp, xhr) {
+					request(this._configs, { url: this.url, data: data }, success && function (resp, xhr) {
 						success.call(this, multiple ? resp : resp[0], xhr);
 					}, error, context);
 					
@@ -161,11 +157,11 @@ var Hoist = (function () {
 				}
 			}
 			
-			request({ url: this.url + "/" + id, data: data }, success, error, context);
+			request(this.hoist._configs, { url: this.url + "/" + id, data: data }, success, error, context);
 		},
 		
 		clear: function (success, error, context) {
-			request({ url: this.url, method: "DELETE" }, success, error, context);
+			request(this.hoist._configs, { url: this.url, method: "DELETE" }, success, error, context);
 		},
 		
 		remove: function (id, success, error, context) {
@@ -173,7 +169,7 @@ var Hoist = (function () {
 				return asyncError(error, context, "Cannot remove model with empty id", null);
 			}
 		
-			request({ url: this.url + "/" + id, method: "DELETE" }, success, error, context);
+			request(this.hoist._configs, { url: this.url + "/" + id, method: "DELETE" }, success, error, context);
 		}
 	});
 	
@@ -181,7 +177,7 @@ var Hoist = (function () {
 	
 	var tagRegex = /\[([^\]]+)\]/g;
 
-	function ObjectDataManager(hash) {
+	function ObjectDataManager(hoist, hash) {
 		var items = this.items = {};
 
 		for (var x in hash) {
@@ -203,6 +199,8 @@ var Hoist = (function () {
 	
 			items[x] = item;
 		}
+		
+		this.hoist = hoist;
 	}
 	
 	extend(ObjectDataManager.prototype, {
@@ -210,6 +208,7 @@ var Hoist = (function () {
 			var items = {},
 				result = {},
 				managers = {},
+				hoist = this.hoist,
 				failed;
 				
 			if (typeof data === "function") {
@@ -272,9 +271,9 @@ var Hoist = (function () {
 							space = path.indexOf(' ');
 
 						if (space > -1) {
-							(managers[item.key] = Hoist(path.slice(0, space))).get(path.slice(space + 1), succeed(item.key), fail(item.key));
+							(managers[item.key] = hoist(path.slice(0, space))).get(path.slice(space + 1), succeed(item.key), fail(item.key));
 						} else {
-							(managers[item.key] = Hoist(path)).get(succeed(item.key), fail(item.key));
+							(managers[item.key] = hoist(path)).get(succeed(item.key), fail(item.key));
 						}
 					}
 					
@@ -287,34 +286,26 @@ var Hoist = (function () {
 			advance();
 		}
 	});
-
-	Hoist = function (type) {
-		if (classOf(type) === "Object") {
-			return new ObjectDataManager(type);
-		} else {
-			return managers[type] || (managers[type] = new DataManager(type));
-		}
-	};
 	
-	extend(Hoist, {
+	var hoistMethods = {
 		apiKey: function (v) {
 			return this.config("apikey", v);
 		},
 		
 		get: function (type, id, success, error, context) {
-			Hoist(type).get(id, success, error, context);
+			this(type).get(id, success, error, context);
 		},
 		
 		post: function (type, id, data, success, error, context) {
-			Hoist(type).post(id, data, success, error, context);
+			this(type).post(id, data, success, error, context);
 		},
 		
 		clear: function (type, success, error, context) {
-			Hoist(type).clear(success, error, context);
+			this(type).clear(success, error, context);
 		},
 		
 		remove: function (type, id, success, error, context) {
-			Hoist(type).remove(id, success, error, context);
+			this(type).remove(id, success, error, context);
 		},
 	
 		config: function (a, b) {
@@ -322,48 +313,54 @@ var Hoist = (function () {
 				var type = typeof a;
 			
 				if (type === "string") {
-					return configs[a];
+					return this._configs[a];
 				} else if (type === "object") {
 					for (var x in a) {
-						configs[x.toLowerCase()] = a[x];
+						this._configs[x.toLowerCase()] = a[x];
 					}
 				}
 			} else {
-				configs[a.toLowerCase()] = b;
+				this._configs[a.toLowerCase()] = b;
 			}
 		},
 		
 		status: function (success, error, context) {
-			request({ url: "auth.hoi.io/status" }, function (resp) {
-				user = resp;
+			var hoist = this;
+		
+			request(this._configs, { url: "auth.hoi.io/status" }, function (resp) {
+				hoist._user = resp;
 				success && success.apply(this, arguments);
 			}, error, context);
 		},
 		
 		signup: function (member, success, error, context) {
+			var hoist = this;
+		
 			if (typeof member === "object") {
-				request({ url: "auth.hoi.io/user", data: member }, function (resp) {
-					user = resp;
+				request(this._configs, { url: "auth.hoi.io/user", data: member }, function (resp) {
+					hoist._user = resp;
 					success && success.apply(this, arguments);
 				}, error, context);
 			}
 		},
 		
 		login: function (member, success, error, context) {
+			var hoist = this;
+		
 			if (typeof member === "object") {
-				request({ url: "auth.hoi.io/login", data: member }, function (resp) {
-					user = resp;
+				request(this._configs, { url: "auth.hoi.io/login", data: member }, function (resp) {
+					hoist._user = resp;
 					success && success.apply(this, arguments);
 				}, error, context);
 			}
 		},
 		
 		logout: function (success, error, context) {
-			request({ url: "auth.hoi.io/logout", method: "POST" }, success, error, context);
+			request(this._configs, { url: "auth.hoi.io/logout", method: "POST" }, success, error, context);
 		},
 		
 		user: function () {
-			return user;
+			return this._user && extend({}, this._user);
 		},
 		
 		notify: function (id, data, success, error, context) {
@@ -376,7 +373,7 @@ var Hoist = (function () {
 			}
 			
 			if (typeof data === "object") {
-				request({ url: "notify.hoi.io/notification/" + id, data: data }, success, error, context);
+				request(this._configs, { url: "notify.hoi.io/notification/" + id, data: data }, success, error, context);
 			}
 		},
 		
@@ -403,34 +400,63 @@ var Hoist = (function () {
 				error = success;
 				success = file;
 
-				request({ url: "file.hoi.io/" + key, responseType: "blob" }, success, error, context);
+				request(this._configs, { url: "file.hoi.io/" + key, responseType: "blob" }, success, error, context);
 				return;
 			} else if (type === "Undefined") {
-				request({ url: "file.hoi.io/" + key, responseType: "blob" }, success, error, context);
+				request(this._configs, { url: "file.hoi.io/" + key, responseType: "blob" }, success, error, context);
 				return;
 			} else {
 				return;
 			}
 			
-			request({ url: "file.hoi.io/" + key, data: data }, success, error, context);
+			request(this._configs, { url: "file.hoi.io/" + key, data: data }, success, error, context);
+		},
+		
+		clone: function () {
+			var hoist = extend(makeHoist(), {
+				_configs: extend({}, this._configs),
+				_user: null,
+				_managers: {}
+			});
+			
+			return hoist;
 		}
+	};
+	
+	function makeHoist() {
+		var hoist = extend(function (type) {
+			if (classOf(type) === "Object") {
+				return new ObjectDataManager(hoist, type);
+			} else {
+				return hoist._managers[type] || (hoist._managers[type] = new DataManager(hoist, type));
+			}
+		}, hoistMethods);
+
+		return hoist;
+	};
+	
+	var Hoist = extend(makeHoist(), {
+		_configs: {
+			protocol: "https://"
+		},
+		_user: null,
+		_managers: {}
 	});
 	
-	Hoist.clone = arguments.callee;
+	// throw Hoist at something it will stick to
 	
-	return Hoist;
+	if ( typeof module === "object" && module && typeof module.exports === "object" ) {
+		module.exports = Hoist;
+	} else {
+		if ( typeof define === "function" && define.amd ) {
+			define( "Hoist", [], function () { return Hoist; } );
+		}
+	}
+	
+	if ( typeof window === "object" && typeof window.document === "object" ) {
+		window.Hoist = Hoist;
+	}
 })();
 
 
-if ( typeof module === "object" && module && typeof module.exports === "object" ) {
-	module.exports = Hoist;
-} else {
-	if ( typeof define === "function" && define.amd ) {
-		define( "Hoist", [], function () { return Hoist; } );
-	}
-}
 
-//put hoist on the global namespace
-if ( typeof window === "object" && typeof window.document === "object" ) {
-	window.Hoist = Hoist;
-}
