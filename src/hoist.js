@@ -143,7 +143,7 @@ var Hoist = (function () {
 		
 		post: function (id, data, success, error, context) {
 			if (typeof id === "object") {
-				var multiple = classOf(id) === "Array";
+				var singleton = classOf(id) === "Array" && id.length === 1;
 			
 				context = error;
 				error = success;
@@ -154,7 +154,7 @@ var Hoist = (function () {
 					id = data._id;
 				} else {
 					request({ url: this.url, data: data }, success && function (resp, xhr) {
-						success.call(this, multiple ? resp : resp[0], xhr);
+						success.call(this, singleton ? [resp] : resp, xhr);
 					}, error, context);
 					
 					return;
