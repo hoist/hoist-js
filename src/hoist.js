@@ -363,8 +363,8 @@
 			var hoist = this;
 			
 			if (typeof error !== "function") {
+			if (!context) context = error;
 				error = null;
-				context = error;
 			}
 		
 			request(this._configs, { url: "auth.hoi.io/status" }, function (resp) {
@@ -494,11 +494,19 @@
 	var bucketMethods = {
 		status: function (success, error, context) {
 			var hoist = this._hoist;
+			
+			if (typeof error !== "function") {
+				if (!context) context = error;
+				error = null;
+			}
 		
 			request(this._hoist._configs, { url: "auth.hoi.io/bucket/current" }, function (bucket) {
 				hoist._bucket = bucket;
 				success && success.apply(this, arguments);
-			}, error, context);
+			}, function () {
+				hoist._bucket = null;
+				error && error.apply(this, arguments);
+			}, context);
 		},
 	
 		post: function (id, data, success, error, context) {
@@ -512,20 +520,37 @@
 			request(this._hoist._configs, { url: "auth.hoi.io/bucket/" + id, data: data }, success, error, context);
 		},
 		
-		set: function (id, success, error, context) {
+		meta: function (key, meta, success, error, context) {
 			var hoist = this._hoist;
 		
-			if (id) {
-				request(this._hoist._configs, { url: "auth.hoi.io/bucket/current/" + id, method: "POST" }, function (bucket) {
+			if (typeof key !== "string") {			
+				context = error;
+				error = success;
+				success = meta;
+				meta = key;
+				
+				if (!hoist._bucket) {
+					return asyncError(error, context, "No bucket to post metadata against", null);
+				}
+				
+				key = hoist._bucket.key;
+				
+				request(hoist._configs, { url: "auth.hoi.io/bucket/" + key + "/meta", data: meta }, function (bucket) {
 					hoist._bucket = bucket;
 					success && success.apply(this, arguments);
 				}, error, context);
 			} else {
-				request(this._hoist._configs, { url: "auth.hoi.io/bucket/current", method: "DELETE" }, function () {
-					hoist._bucket = null;
-					success && success.apply(this, arguments);
-				}, error, context);
+				request(hoist._configs, { url: "auth.hoi.io/bucket/" + key + "/meta", data: meta }, success, error, context);
 			}
+		},
+		
+		set: function (key, success, error, context) {
+			var hoist = this._hoist;
+		
+			request(this._hoist._configs, { url: "auth.hoi.io/bucket/current/" + (key || "default"), method: "POST" }, function (bucket) {
+				hoist._bucket = key ? bucket : null;
+				success && success.apply(this, arguments);
+			}, error, context);
 		},
 		
 		list: function (success, error, context) {
@@ -546,8 +571,20 @@
 			}
 		}, hoistMethods);
 		
-		hoist.bucket = extend(function () {
-			return hoist._bucket;
+		hoist.bucket = extend(function (meta, success, error, context, cx) {
+			var type = typeof meta;
+		
+			if (type === "function") {
+				hoist.bucket.status(meta, success, error);
+			} else if (type === "string" && typeof success === "object") {
+					hoist.bucket.post(meta, success, error, context, cx);
+			} else if (type === "string" || meta === null) {
+				hoist.bucket.set(meta, success, error, context);
+			} else if (type === "object") {
+				hoist.bucket.meta(meta, success, error, context);
+			} else {
+				return hoist._bucket;
+			}
 		}, bucketMethods);
 		
 		hoist.bucket._hoist = hoist;
