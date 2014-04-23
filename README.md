@@ -119,6 +119,47 @@ To send the notification with template id `id`, populated with the data `data`, 
 
 	Hoist.notify(id, data, …)
 	Hoist.notify({id: id, data: data}, …)
+	
+## Switching buckets
+
+Hoist provides buckets to allow different members access to different data. When the member logs in, they
+start out in the default bucket. Use the following method to list the buckets the current member has access to.
+
+	Hoist.bucket.list(…)
+	
+Use one of the following to create a new bucket, with key `key` and attached metadata `meta`. The bucket created
+will be owned by the current user.
+
+	Hoist.bucket.post(key, meta, …)
+	Hoist.bucket(key, meta, …)
+
+To update the metadata of the bucket with a given key, call the following:
+
+	Hoist.bucket.meta(key, meta, …)
+	
+To set the current bucket, use one of
+
+	Hoist.bucket.set(key, …)
+	Hoist.bucket(key, …)
+	
+where `key` is the key for the bucket that you want to enter, or `null` for the default bucket.
+
+To check what bucket the member is currently in, use one of the following. The `success` callback will be called
+with the current bucket if there is one; otherwise the `error` callback will be called.
+
+	Hoist.bucket.status(…)
+	Hoist.bucket(…)
+	
+Once you're in a bucket, you can use the following to set the metadata of the current bucket.
+
+	Hoist.bucket(meta, …)
+	
+After the bucket is set or the status is checked, the library will remember the current bucket with its metadata.
+You can simply call `Hoist.bucket()` to get it.
+	
+Finally, to invite a user to the current bucket, do:
+
+	Hoist.bucket.invite({ "email": "boris@daspem.com" }, …)
 
 ## Aggregating data calls
 
