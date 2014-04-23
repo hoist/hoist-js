@@ -126,38 +126,38 @@
 	
 	extend(DataManager.prototype, {
 		get: function (id, success, error, context) {
-			if (typeof id === "function" || id === u) {
+			if (typeof id === "function") {
 				context = error;
 				error = success;
 				success = id;
-				
-				request(this.hoist._configs, { url: this.url }, success, error, context);
-			} else {
+				id = null;
+			}
+			
+			if (id) {
 				request(this.hoist._configs, { url: this.url + "/" + id }, success, error, context);
+			} else {
+				request(this.hoist._configs, { url: this.url }, success, error, context);
 			}
 		},
 		
 		post: function (id, data, success, error, context) {
-			if (typeof id === "object") {
-				var singleton = classOf(id) === "Array" && id.length === 1;
-
+			if (typeof id === "object" && id !== null) {
 				context = error;
 				error = success;
 				success = data;
 				data = id;
-
-				if (data._id) {
-					id = data._id;
-				} else {
-					request({ url: this.url, data: data }, success && function (resp, xhr) {
-						success.call(this, singleton ? [resp] : resp, xhr);
-					}, error, context);
-
-					return;
-				}
+				id = data._id;
 			}
 			
-			request(this.hoist._configs, { url: this.url + "/" + id, data: data }, success, error, context);
+			var singleton = classOf(data) === "Array" && data.length === 1;
+			
+			if (id) {
+				request(this.hoist._configs, { url: this.url + "/" + id, data: data }, success, error, context);
+			} else {
+				request(this.hoist._configs, { url: this.url, data: data }, success && function (resp, xhr) {
+					success.call(this, singleton ? [resp] : resp, xhr);
+				}, error, context);
+			}
 		},
 		
 		clear: function (success, error, context) {
@@ -391,7 +391,7 @@
 		},
 		
 		file: function (key, file, success, error, context) {
-			if (file.jQuery) file = file[0];
+			if (file.jquery) file = file[0];
 		
 			var type = classOf(file),
 				data;
