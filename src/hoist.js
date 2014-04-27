@@ -92,6 +92,10 @@
 		
 		xhr.setRequestHeader("Authorization", "Hoist " + configs.apikey);
 		
+		if (opts.bucket) {
+			xhr.setRequestHeader("x-bucket-key", opts.bucket);
+		}
+		
 		xhr.withCredentials = true;
 		
 		xhr.onreadystatechange = function () {
@@ -118,10 +122,11 @@
 	
 	// simple data manager
 	
-	function DataManager(hoist, type) {
+	function DataManager(hoist, type, bucket) {
 		this.type = type;
 		this.url = "data.hoi.io/" + type;
 		this.hoist = hoist;
+		this.bucket = bucket;
 	}
 	
 	extend(DataManager.prototype, {
@@ -134,9 +139,9 @@
 			}
 			
 			if (id) {
-				request(this.hoist._configs, { url: this.url + "/" + id }, success, error, context);
+				request(this.hoist._configs, { url: this.url + "/" + id, bucket: this.bucket }, success, error, context);
 			} else {
-				request(this.hoist._configs, { url: this.url }, success, error, context);
+				request(this.hoist._configs, { url: this.url, bucket: this.bucket }, success, error, context);
 			}
 		},
 		
@@ -152,16 +157,16 @@
 			var singleton = classOf(data) === "Array" && data.length === 1;
 			
 			if (id) {
-				request(this.hoist._configs, { url: this.url + "/" + id, data: data }, success, error, context);
+				request(this.hoist._configs, { url: this.url + "/" + id, bucket: this.bucket, data: data }, success, error, context);
 			} else {
-				request(this.hoist._configs, { url: this.url, data: data }, success && function (resp, xhr) {
+				request(this.hoist._configs, { url: this.url, bucket: this.bucket, data: data }, success && function (resp, xhr) {
 					success.call(this, singleton ? [resp] : resp, xhr);
 				}, error, context);
 			}
 		},
 		
 		clear: function (success, error, context) {
-			request(this.hoist._configs, { url: this.url, method: "DELETE" }, success, error, context);
+			request(this.hoist._configs, { url: this.url, bucket: this.bucket, method: "DELETE" }, success, error, context);
 		},
 		
 		remove: function (id, success, error, context) {
@@ -169,7 +174,11 @@
 				return asyncError(error, context, "Cannot remove model with empty id", null);
 			}
 		
-			request(this.hoist._configs, { url: this.url + "/" + id, method: "DELETE" }, success, error, context);
+			request(this.hoist._configs, { url: this.url + "/" + id, bucket: this.bucket, method: "DELETE" }, success, error, context);
+		},
+		
+		use: function (bucket) {
+			return this.hoist(this.type, bucket);
 		}
 	});
 	
@@ -177,7 +186,7 @@
 	
 	var tagRegex = /\[([^\]]+)\]/g;
 
-	function ObjectDataManager(hoist, hash) {
+	function ObjectDataManager(hoist, hash, bucket) {
 		var items = this.items = {};
 
 		for (var x in hash) {
@@ -200,7 +209,7 @@
 			items[x] = item;
 		}
 		
-		this.hoist = hoist;
+		this.hoist = bucket ? hoist.use(bucket) : hoist;
 	}
 	
 	extend(ObjectDataManager.prototype, {
@@ -286,6 +295,32 @@
 			advance();
 		}
 	});
+	
+	var bucketManagerMethods = {
+		get: function (type, id, success, error, context) {
+			this.hoist(type, this.bucket).get(id, success, error, context);
+		},
+		
+		post: function (type, id, success, error, context) {
+			this.hoist(type, this.bucket).post(id, data, success, error, context);
+		},
+		
+		clear: function (type, success, error, context) {
+			this.hoist(type, this.bucket).clear(success, error, context);
+		},
+		
+		remove: function (type, id, success, error, context) {
+			this.hoist(type, this.bucket).remove(id, success, error, context);
+		},
+		
+		meta: function (data, success, error, context) {
+			this.hoist.bucket.meta(this.bucket, data, success, error, context);
+		},
+		
+		invite: function (data, success, error, context) {
+			this.hoist.bucket.invite(this.bucket, data, success, error, context);
+		}
+	};
 	
 	var hoistMethods = {
 		apiKey: function (v) {
@@ -425,6 +460,23 @@
 			request(this._configs, { url: "file.hoi.io/" + key, data: data }, success, error, context);
 		},
 		
+		use: function (bucket) {
+			var hoist = this;
+		
+			var manager = extend(function (type) {
+				if (classOf(type) === "Object") {
+					return new ObjectDataManager(hoist, type, bucket);
+				} else {
+					return new DataManager(hoist, type, bucket);
+				}
+			}, bucketManagerMethods);
+			
+			manager.hoist = this;
+			manager.bucket = bucket;
+			
+			return manager;
+		},
+		
 		clone: function () {
 			var hoist = extend(makeHoist(), {
 				_configs: extend({}, this._configs),
@@ -456,14 +508,25 @@
 		},
 	
 		post: function (id, data, success, error, context) {
-			if (typeof data !== "object") {
+			if (typeof id !== "string" && id !== null) {
+				context = error;
+				error = success;
+				data = id;
+				id = null;
+			}
+		
+			if (typeof data === "function") {
 				context = error;
 				error = success;
 				success = data;
 				data = null;
 			}
-		
-			request(this._hoist._configs, { url: "auth.hoi.io/bucket/" + id, data: data }, success, error, context);
+			
+			if (id) {
+				request(this._hoist._configs, { url: "auth.hoi.io/bucket/" + id, data: data }, success, error, context);
+			} else {
+				request(this._hoist._configs, { url: "auth.hoi.io/bucket", data: data }, success, error, context);
+			}
 		},
 		
 		meta: function (key, meta, success, error, context) {
@@ -509,11 +572,11 @@
 	};
 	
 	function makeHoist() {
-		var hoist = extend(function (type) {
+		var hoist = extend(function (type, bucket) {
 			if (classOf(type) === "Object") {
-				return new ObjectDataManager(hoist, type);
+				return new ObjectDataManager(hoist, type, bucket);
 			} else {
-				return hoist._managers[type] || (hoist._managers[type] = new DataManager(hoist, type));
+				return new DataManager(hoist, type, bucket);
 			}
 		}, hoistMethods);
 		
@@ -536,7 +599,7 @@
 		hoist.bucket._hoist = hoist;
 
 		return hoist;
-	};
+	}
 	
 	var Hoist = extend(makeHoist(), {
 		_configs: {
