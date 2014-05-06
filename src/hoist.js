@@ -319,6 +319,10 @@
 		
 		invite: function (data, success, error, context) {
 			this.hoist.bucket.invite(this.bucket, data, success, error, context);
+		},
+		
+		enter: function (success, error, context) {
+			this.hoist.bucket.set(this.bucket, success, error, context);
 		}
 	};
 	
@@ -403,6 +407,16 @@
 		
 			request(this._configs, { url: "auth.hoi.io/logout", method: "POST" }, function () {
 				hoist._user = null;
+				hoist._bucket = null;
+				success && success.apply(this, arguments);
+			}, error, context);
+		},
+		
+		accept: function (code, data, success, error, context) {
+	 		var hoist = this;
+		
+			request(this._configs, { url: "auth.hoi.io/invite/" + code + "/user", data: data }, function (resp) {
+				hoist._user = resp;
 				success && success.apply(this, arguments);
 			}, error, context);
 		},
@@ -511,6 +525,7 @@
 			if (typeof id !== "string" && id !== null) {
 				context = error;
 				error = success;
+				success = data;
 				data = id;
 				id = null;
 			}
@@ -543,14 +558,15 @@
 				}
 				
 				key = hoist._bucket.key;
-				
-				request(hoist._configs, { url: "auth.hoi.io/bucket/" + key + "/meta", data: meta }, function (bucket) {
-					hoist._bucket = bucket;
-					success && success.apply(this, arguments);
-				}, error, context);
-			} else {
-				request(hoist._configs, { url: "auth.hoi.io/bucket/" + key + "/meta", data: meta }, success, error, context);
 			}
+			
+			request(hoist._configs, { url: "auth.hoi.io/bucket/" + key + "/meta", data: meta }, function (bucket) {
+				if (hoist._bucket && hoist._bucket.key == bucket.key) {
+					hoist._bucket = bucket;
+				}
+				
+				success && success.apply(this, arguments);
+			}, error, context);
 		},
 		
 		set: function (key, success, error, context) {
@@ -566,8 +582,28 @@
 			request(this._hoist._configs, { url: "auth.hoi.io/buckets" }, success, error, context);
 		},
 		
-		invite: function (data, success, error, context) {
-			request(this._hoist._configs, { url: "auth.hoi.io/invite", data: data }, success, error, context);
+		invite: function (key, data, success, error, context) {
+			if (typeof key == "object") {
+				context = error;
+				error = success;
+				success = data;
+				data = key;
+				key = null;
+			}
+			
+			var hoist = this._hoist;
+			
+			if (!key || hoist._bucket && hoist._bucket.key == key) {			
+				request(hoist._configs, { url: "auth.hoi.io/invite", data: data }, success, error, context);
+			} else {
+				// switch bucket so you can invite the user into the right one -- this is suboptimal but works for now
+				
+				var hoist = this._hoist;
+				
+				this.set(key, function () {
+					request(hoist._configs, { url: "auth.hoi.io/invite", data: data }, success, error, this);
+				}, error, context);
+			}
 		}
 	};
 	
