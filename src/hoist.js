@@ -130,42 +130,39 @@
 	}
 
 	extend(DataManager.prototype, {
-		get: function (id, query, success, error, context) {
+		get: function (id, success, error, context) {
 			if (typeof id === "function") {
-				context = success;
-				error = query;
+				context = error;
+				error = success;
 				success = id;
 				id = null;
-				query = null;
-			} else if (typeof query === "function") {
-				success = query;
-				error = success;
-				context = error;
-				query = null;
-			}
-
-			if(query) {
-				var queryParts = [];
-				if(query.q) {
-					queryParts.push("q=" + urlencode(JSON.stringify(query.q)));
-				}
-				if(query.limit) {
-					queryParts.push("limit=" + urlencode(query.limit));
-				}
-				if(query.skip) {
-					queryParts.push("skip=" + urlencode(query.skip));
-				}
-				if(query.sort) {
-					queryParts.push("sort=" + urlencode(query.sort));
-				}
-				query = "?" + queryParts.join("&");
 			}
 
 			if (id) {
-				request(this.hoist._configs, { url: this.url + "/" + id + (query || ""), bucket: this.bucket }, success, error, context);
+				request(this.hoist._configs, { url: this.url + "/" + id, bucket: this.bucket }, success, error, context);
 			} else {
-				request(this.hoist._configs, { url: this.url + (query || ""), bucket: this.bucket }, success, error, context);
+				request(this.hoist._configs, { url: this.url, bucket: this.bucket }, success, error, context);
 			}
+		},
+		
+		query: function (query) {
+			return new QueryManager(this, { q: query });
+		},
+		
+		where: function (key, value) {
+			return new QueryManager(this, {}).where(key, value);
+		},
+		
+		limit: function (limit) {
+			return new QueryManager(this, { limit: limit });
+		},
+		
+		skip: function (skip) {
+			return new QueryManager(this, { skip: skip });
+		},
+		
+		sortBy: function (key, dir) {
+			return new QueryManager(this, { sort: [[ key, dir || 1 ]] });
 		},
 
 		post: function (id, data, success, error, context) {
@@ -202,6 +199,115 @@
 
 		use: function (bucket) {
 			return this.hoist(this.type, bucket);
+		}
+	});
+	
+	// query manager
+	
+	function QueryManager(dm, query) {
+		this.dm = dm;
+		this.query = query;
+	}
+	
+	extend(QueryManager.prototype, {
+		get: function (success, error, context) {
+			var parts = [];
+		
+			if (this.query.q) parts.push("q=" + encodeURIComponent(JSON.stringify(this.query.q)));
+			if (this.query.limit) parts.push("limit=" + this.query.limit);
+			if (this.query.skip) parts.push("skip=" + this.query.skip);
+			if (this.query.sort) parts.push("sort=" + encodeURIComponent(JSON.stringify(this.query.sort)));
+			
+			request(this.dm.hoist._configs, { url: this.dm.url + "?" + parts.join('&'), bucket: this.dm.bucket }, success, error, context);
+		},
+		
+		where: function (key, value) {
+			if (typeof key === "string") {
+				if (value === u) {
+					return new PartialQueryManager(this, key);
+				} else {
+					return this._where(key, value);
+				}
+			}
+			
+			var query = extend({}, this.query);
+			query.q = query.q ? extend({}, query.q) : {};
+			extend(query.q, key);
+			return new QueryManager(this.dm, query);
+		},
+		
+		_where: function (key, value) {
+			var query = extend({}, this.query);
+			query.q = query.q ? extend({}, query.q) : {};
+			query.q[key] = value;
+			return new QueryManager(this.dm, query);
+		},
+		
+		_whereAnd: function (key, op, value) {
+			var query = extend({}, this.query);
+			query.q = query.q ? extend({}, query.q) : {};
+			query.q[key] = query.q[key] ? extend({}, query.q[key]) : {};
+			query.q[key][op] = value;
+			return new QueryManager(this.dm, query);
+		},
+		
+		limit: function (limit) {
+			var query = extend({}, this.query);
+			query.limit = limit;
+			return new QueryManager(this.dm, query);
+		},
+		
+		skip: function (skip) {
+			var query = extend({}, this.query);
+			query.skip = skip;
+			return new QueryManager(this.dm, query);
+		},
+		
+		sortBy: function (key, dir) {
+			var query = extend({}, this.query);
+			query.sort = [[ key, dir || 1 ]];
+			return new QueryManager(this.dm, query);
+		},
+		
+		thenBy: function (key, dir) {
+			var query = extend({}, this.query);
+			query.sort = query.sort ? query.sort.slice() : [];
+			query.sort.push([ key, dir || 1 ]);
+			return new QueryManager(this.dm, query);
+		},
+		
+		use: function (bucket) {
+			return new QueryManager(this.dm.use(bucket), this.query);
+		}
+	});
+	
+	// partial query manager, proxying mongo queries since 2014
+	
+	function PartialQueryManager(qm, key) {
+		this.qm = qm;
+		this.key = key;
+	}
+	
+	extend(PartialQueryManager.prototype, {
+		eq:   function (value) { this.qm = this.qm._where(this.key, value); return this; },
+		gt:   function (value) { this.qm = this.qm._whereAnd(this.key, "$gt",  value); return this; },
+		gte:  function (value) { this.qm = this.qm._whereAnd(this.key, "$gte", value); return this; },
+		gt:   function (value) { this.qm = this.qm._whereAnd(this.key, "$gt",  value); return this; },
+		isIn: function (value) { this.qm = this.qm._whereAnd(this.key, "$in",  value); return this; },
+		lt:   function (value) { this.qm = this.qm._whereAnd(this.key, "$lt",  value); return this; },
+		lte:  function (value) { this.qm = this.qm._whereAnd(this.key, "$lte", value); return this; },
+		ne:   function (value) { this.qm = this.qm._whereAnd(this.key, "$ne",  value); return this; },
+		nin:  function (value) { this.qm = this.qm._whereAnd(this.key, "$nin", value); return this; },
+		exists: function () { this.qm = this.qm._whereAnd(this.key, "$exists", true); return this; },
+
+		where: function (key) { return this.qm.where(key); },
+		limit: function (limit) { return this.qm.limit(limit); },
+		skip: function (skip) { return this.qm.skip(skip); },
+		sortBy: function (key, dir) { return this.qm.sortBy(key, dir); },
+		thenBy: function (key, dir) { return this.qm.sortBy(key, dir); },
+		
+		get: function (success, error, context) {
+			return this.qm.get(success, error, context);
 		}
 	});
 
