@@ -39,6 +39,120 @@
 			error.apply(context, args);
 		}, 0);
 	}
+	
+	function Promise() {
+		this.cbs = [];
+	}
+	
+	extend(Promise.prototype, {
+		resolve: function (value) {
+			if (this.state) return;
+			
+			var then = value && value.then,
+				self = this,
+				called;
+			
+			if (typeof then === "function") {
+				try {
+					then.call(value, function (value) {
+						if (!called) {
+							called = true;
+							self.resolve(value);
+						}
+					}, function (value) {
+						if (!called) {
+							called = true;
+							self.reject(value);
+						}
+					});
+				}
+				catch (e) {
+					if (!called) {
+						called = true;
+						this.reject(e);
+					}
+				}
+			} else {
+				this.state = 1;
+				this.value = value;
+			
+				for (var i = 0; i < this.cbs.length; i++) {
+					var success = this.cbs[i][0],
+						promise = this.cbs[i][2];
+					
+					try {
+						if (typeof success === "function") {
+							promise.resolve(success(value));
+						} else {
+							promise.resolve(value);
+						}
+					}
+					catch (e) {
+						promise.reject(e);
+					}
+				}
+				
+				this.cbs = null;
+			}
+		},
+		
+		reject: function (value) {
+			if (this.state) return;
+		
+			this.state = -1;
+			this.value = value;
+			
+			for (var i = 0; i < this.cbs.length; i++) {
+				var error = this.cbs[i][1],
+					promise = this.cbs[i][2];
+					
+				try {
+					if (typeof error === "function") {
+						promise.resolve(error(value));
+					} else {
+						promise.reject(value);
+					}
+				}
+				catch (e) {
+					promise.reject(e);
+				}
+			}
+				
+			this.cbs = null;
+		},
+	
+		then: function (success, error) {
+			var promise = new Promise();
+		
+			if (this.state) {
+				var ret;
+			
+				try {
+					if (this.state == 1) {
+						if (typeof success === "function") {
+							promise.resolve(success(this.value));
+						} else {
+							promise.resolve(this.value);
+						}
+					} else {
+						if (typeof error === "function") {
+							promise.resolve(error(this.value));
+						} else {
+							promise.reject(this.value);
+						}
+					}
+				}
+				catch (e) {
+					promise.reject(e);
+				}
+				
+			} else {
+				this.cbs.push([ success, error, promise ]);
+			}
+			
+			return promise;
+		}
+	});
 
 	// ajax helper
 
@@ -97,6 +211,8 @@
 		}
 
 		xhr.withCredentials = true;
+		
+		var promise = new Promise();
 
 		xhr.onreadystatechange = function () {
 			if (xhr.readyState === 4) {
@@ -111,13 +227,17 @@
 					}
 
 					success && success.call(context, response, xhr);
+					promise.resolve(response);
 				} else {
 					error && error.call(context, xhr.statusText, xhr);
+					promise.reject(xhr.statusText);
 				}
 			}
 		};
 
 		xhr.send(opts.data);
+		
+		return promise;
 	}
 
 	// simple data manager
@@ -139,9 +259,9 @@
 			}
 
 			if (id) {
-				request(this.hoist._configs, { url: this.url + "/" + id, bucket: this.bucket }, success, error, context);
+				return request(this.hoist._configs, { url: this.url + "/" + id, bucket: this.bucket }, success, error, context);
 			} else {
-				request(this.hoist._configs, { url: this.url, bucket: this.bucket }, success, error, context);
+				return request(this.hoist._configs, { url: this.url, bucket: this.bucket }, success, error, context);
 			}
 		},
 		
@@ -177,16 +297,16 @@
 			var singleton = classOf(data) === "Array" && data.length === 1;
 
 			if (id) {
-				request(this.hoist._configs, { url: this.url + "/" + id, bucket: this.bucket, data: data }, success, error, context);
+				return request(this.hoist._configs, { url: this.url + "/" + id, bucket: this.bucket, data: data }, success, error, context);
 			} else {
-				request(this.hoist._configs, { url: this.url, bucket: this.bucket, data: data }, success && function (resp, xhr) {
+				return request(this.hoist._configs, { url: this.url, bucket: this.bucket, data: data }, success && function (resp, xhr) {
 					success.call(this, singleton ? [resp] : resp, xhr);
 				}, error, context);
 			}
 		},
 
 		clear: function (success, error, context) {
-			request(this.hoist._configs, { url: this.url, bucket: this.bucket, method: "DELETE" }, success, error, context);
+			return request(this.hoist._configs, { url: this.url, bucket: this.bucket, method: "DELETE" }, success, error, context);
 		},
 
 		remove: function (id, success, error, context) {
@@ -194,7 +314,7 @@
 				return asyncError(error, context, "Cannot remove model with empty id", null);
 			}
 
-			request(this.hoist._configs, { url: this.url + "/" + id, bucket: this.bucket, method: "DELETE" }, success, error, context);
+			return request(this.hoist._configs, { url: this.url + "/" + id, bucket: this.bucket, method: "DELETE" }, success, error, context);
 		},
 
 		use: function (bucket) {
@@ -218,7 +338,7 @@
 			if (this.query.skip) parts.push("skip=" + this.query.skip);
 			if (this.query.sort) parts.push("sort=" + encodeURIComponent(JSON.stringify(this.query.sort)));
 			
-			request(this.dm.hoist._configs, { url: this.dm.url + "?" + parts.join('&'), bucket: this.dm.bucket }, success, error, context);
+			return request(this.dm.hoist._configs, { url: this.dm.url + "?" + parts.join('&'), bucket: this.dm.bucket }, success, error, context);
 		},
 		
 		where: function (key, value) {
@@ -427,31 +547,31 @@
 
 	var bucketManagerMethods = {
 		get: function (type, id, success, error, context) {
-			this.hoist(type, this.bucket).get(id, success, error, context);
+			return this.hoist(type, this.bucket).get(id, success, error, context);
 		},
 
 		post: function (type, id, success, error, context) {
-			this.hoist(type, this.bucket).post(id, data, success, error, context);
+			return this.hoist(type, this.bucket).post(id, data, success, error, context);
 		},
 
 		clear: function (type, success, error, context) {
-			this.hoist(type, this.bucket).clear(success, error, context);
+			return this.hoist(type, this.bucket).clear(success, error, context);
 		},
 
 		remove: function (type, id, success, error, context) {
-			this.hoist(type, this.bucket).remove(id, success, error, context);
+			return this.hoist(type, this.bucket).remove(id, success, error, context);
 		},
 
 		meta: function (data, success, error, context) {
-			this.hoist.bucket.meta(this.bucket, data, success, error, context);
+			return this.hoist.bucket.meta(this.bucket, data, success, error, context);
 		},
 
 		invite: function (data, success, error, context) {
-			this.hoist.bucket.invite(this.bucket, data, success, error, context);
+			return this.hoist.bucket.invite(this.bucket, data, success, error, context);
 		},
 
 		enter: function (success, error, context) {
-			this.hoist.bucket.set(this.bucket, success, error, context);
+			return this.hoist.bucket.set(this.bucket, success, error, context);
 		}
 	};
 
@@ -461,19 +581,19 @@
 		},
 
 		get: function (type, id, success, error, context) {
-			this(type).get(id, success, error, context);
+			return this(type).get(id, success, error, context);
 		},
 
 		post: function (type, id, data, success, error, context) {
-			this(type).post(id, data, success, error, context);
+			return this(type).post(id, data, success, error, context);
 		},
 
 		clear: function (type, success, error, context) {
-			this(type).clear(success, error, context);
+			return this(type).clear(success, error, context);
 		},
 
 		remove: function (type, id, success, error, context) {
-			this(type).remove(id, success, error, context);
+			return this(type).remove(id, success, error, context);
 		},
 
 		config: function (a, b) {
@@ -500,7 +620,7 @@
 				error = null;
 			}
 
-			request(this._configs, { url: "auth.hoi.io/status" }, function (resp) {
+			return request(this._configs, { url: "auth.hoi.io/status" }, function (resp) {
 				hoist._user = resp;
 				success && success.apply(this, arguments);
 			}, function () {
@@ -513,7 +633,7 @@
 			var hoist = this;
 
 			if (typeof member === "object") {
-				request(this._configs, { url: "auth.hoi.io/user", data: member }, function (resp) {
+				return request(this._configs, { url: "auth.hoi.io/user", data: member }, function (resp) {
 					hoist._user = resp;
 					success && success.apply(this, arguments);
 				}, error, context);
@@ -524,7 +644,7 @@
 			var hoist = this;
 
 			if (typeof member === "object") {
-				request(this._configs, { url: "auth.hoi.io/login", data: member }, function (resp) {
+				return request(this._configs, { url: "auth.hoi.io/login", data: member }, function (resp) {
 					hoist._user = resp;
 					success && success.apply(this, arguments);
 				}, error, context);
@@ -534,7 +654,7 @@
 		logout: function (success, error, context) {
 			var hoist = this;
 
-			request(this._configs, { url: "auth.hoi.io/logout", method: "POST" }, function () {
+			return request(this._configs, { url: "auth.hoi.io/logout", method: "POST" }, function () {
 				hoist._user = null;
 				hoist._bucket = null;
 				success && success.apply(this, arguments);
@@ -544,7 +664,7 @@
 		accept: function (code, data, success, error, context) {
 			var hoist = this;
 
-			request(this._configs, { url: "auth.hoi.io/invite/" + code + "/user", data: data }, function (resp) {
+			return request(this._configs, { url: "auth.hoi.io/invite/" + code + "/user", data: data }, function (resp) {
 				hoist._user = resp;
 				success && success.apply(this, arguments);
 			}, error, context);
@@ -564,7 +684,7 @@
 			}
 
 			if (typeof data === "object") {
-				request(this._configs, { url: "notify.hoi.io/notification/" + id, data: data }, success, error, context);
+				return request(this._configs, { url: "notify.hoi.io/notification/" + id, data: data }, success, error, context);
 			}
 		},
 
@@ -600,7 +720,7 @@
 				return;
 			}
 
-			request(this._configs, { url: "file.hoi.io/" + key, data: data }, success, error, context);
+			return request(this._configs, { url: "file.hoi.io/" + key, data: data }, success, error, context);
 		},
 
 		use: function (bucket) {
@@ -641,7 +761,7 @@
 				error = null;
 			}
 
-			request(this._hoist._configs, { url: "auth.hoi.io/bucket/current" }, function (bucket) {
+			return request(this._hoist._configs, { url: "auth.hoi.io/bucket/current" }, function (bucket) {
 				hoist._bucket = bucket;
 				success && success.apply(this, arguments);
 			}, function () {
@@ -667,9 +787,9 @@
 			}
 
 			if (id) {
-				request(this._hoist._configs, { url: "auth.hoi.io/bucket/" + id, data: data }, success, error, context);
+				return request(this._hoist._configs, { url: "auth.hoi.io/bucket/" + id, data: data }, success, error, context);
 			} else {
-				request(this._hoist._configs, { url: "auth.hoi.io/bucket", data: data }, success, error, context);
+				return request(this._hoist._configs, { url: "auth.hoi.io/bucket", data: data }, success, error, context);
 			}
 		},
 
@@ -689,7 +809,7 @@
 				key = hoist._bucket.key;
 			}
 
-			request(hoist._configs, { url: "auth.hoi.io/bucket/" + key + "/meta", data: meta }, function (bucket) {
+			return request(hoist._configs, { url: "auth.hoi.io/bucket/" + key + "/meta", data: meta }, function (bucket) {
 				if (hoist._bucket && hoist._bucket.key == bucket.key) {
 					hoist._bucket = bucket;
 				}
@@ -701,14 +821,14 @@
 		set: function (key, success, error, context) {
 			var hoist = this._hoist;
 
-			request(this._hoist._configs, { url: "auth.hoi.io/bucket/current/" + (key || "default"), method: "POST" }, function (bucket) {
+			return request(this._hoist._configs, { url: "auth.hoi.io/bucket/current/" + (key || "default"), method: "POST" }, function (bucket) {
 				hoist._bucket = key ? bucket : null;
 				success && success.apply(this, arguments);
 			}, error, context);
 		},
 
 		list: function (success, error, context) {
-			request(this._hoist._configs, { url: "auth.hoi.io/buckets" }, success, error, context);
+			return request(this._hoist._configs, { url: "auth.hoi.io/buckets" }, success, error, context);
 		},
 
 		invite: function (key, data, success, error, context) {
@@ -723,7 +843,7 @@
 			var hoist = this._hoist;
 
 			if (!key || hoist._bucket && hoist._bucket.key == key) {
-				request(hoist._configs, { url: "auth.hoi.io/invite", data: data }, success, error, context);
+				return request(hoist._configs, { url: "auth.hoi.io/invite", data: data }, success, error, context);
 			} else {
 				// switch bucket so you can invite the user into the right one -- this is suboptimal but works for now
 				this.set(key, function () {
