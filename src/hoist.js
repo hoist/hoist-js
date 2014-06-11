@@ -454,7 +454,7 @@
 			this.hoist.bucket.set(this.bucket, success, error, context);
 		}
 	};
-
+	
 	var hoistMethods = {
 		apiKey: function (v) {
 			return this.config("apikey", v);
@@ -494,12 +494,12 @@
 
 		status: function (success, error, context) {
 			var hoist = this;
-
+			
 			if (typeof error !== "function") {
 			if (!context) context = error;
 				error = null;
 			}
-
+			
 			request(this._configs, { url: "auth.hoi.io/status" }, function (resp) {
 				hoist._user = resp;
 				success && success.apply(this, arguments);
@@ -511,7 +511,7 @@
 
 		signup: function (member, success, error, context) {
 			var hoist = this;
-
+			
 			if (typeof member === "object") {
 				request(this._configs, { url: "auth.hoi.io/user", data: member }, function (resp) {
 					hoist._user = resp;
@@ -522,7 +522,7 @@
 
 		login: function (member, success, error, context) {
 			var hoist = this;
-
+			
 			if (typeof member === "object") {
 				request(this._configs, { url: "auth.hoi.io/login", data: member }, function (resp) {
 					hoist._user = resp;
@@ -619,7 +619,6 @@
 
 			return manager;
 		},
-
 		clone: function () {
 			var hoist = extend(makeHoist(), {
 				_configs: extend({}, this._configs),
@@ -635,12 +634,11 @@
 	var bucketMethods = {
 		status: function (success, error, context) {
 			var hoist = this._hoist;
-
 			if (typeof error !== "function") {
 				if (!context) context = error;
 				error = null;
 			}
-
+			
 			request(this._hoist._configs, { url: "auth.hoi.io/bucket/current" }, function (bucket) {
 				hoist._bucket = bucket;
 				success && success.apply(this, arguments);
