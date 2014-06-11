@@ -557,12 +557,14 @@
 				}
 
 				if (!loading) {
-					success.call(context, result, managers);
+					success && success.call(context, result, managers);
 					promise.resolve(result);
 				}
 			}
 
 			advance();
+			
+			return promise;
 		}
 	});
 
@@ -769,7 +771,7 @@
 
 			var manager = extend(function (type) {
 				if (classOf(type) === "Object") {
-					return new ObjectDataManager(hoist, type, bucket);
+					return new ObjectDataManager(manager, type);
 				} else {
 					return new DataManager(hoist, type, bucket);
 				}
