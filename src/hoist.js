@@ -10,6 +10,13 @@
 		for (var x in from) into[x] = from[x];
 		return into;
 	}
+	
+	function extendAliases(into, from) {
+		for (var x in from) {
+			var xs = x.split(' ');
+			for (var i = 0; i < xs.length; i++) into[xs[i]] = from[x];
+		}
+	}
 
 	function get(obj, key, nothing) {
 		if (key.indexOf('.') == -1) {
@@ -423,18 +430,28 @@
 		this.key = key;
 	}
 	
+	extendAliases(PartialQueryManager.prototype, {
+		"eq is equals":
+			function (value) { this.qm = this.qm._where(this.key, value); return this; },
+		"gt greaterThan":
+			function (value) { this.qm = this.qm._whereAnd(this.key, "$gt",  value); return this; },
+		"gte ge":
+			function (value) { this.qm = this.qm._whereAnd(this.key, "$gte", value); return this; },
+		"elem in":
+			function (value) { this.qm = this.qm._whereAnd(this.key, "$in",  value); return this; },
+		"lt lessThan":
+			function (value) { this.qm = this.qm._whereAnd(this.key, "$lt",  value); return this; },
+		"lte le":
+			function (value) { this.qm = this.qm._whereAnd(this.key, "$lte", value); return this; },
+		"neq ne isnt notEquals":
+			function (value) { this.qm = this.qm._whereAnd(this.key, "$ne",  value); return this; },
+		"nelem nin notIn notElem":
+			function (value) { this.qm = this.qm._whereAnd(this.key, "$nin", value); return this; },
+		"exists":
+			function () { this.qm = this.qm._whereAnd(this.key, "$exists", true); return this; }
+	});
+	
 	extend(PartialQueryManager.prototype, {
-		eq:   function (value) { this.qm = this.qm._where(this.key, value); return this; },
-		gt:   function (value) { this.qm = this.qm._whereAnd(this.key, "$gt",  value); return this; },
-		gte:  function (value) { this.qm = this.qm._whereAnd(this.key, "$gte", value); return this; },
-		gt:   function (value) { this.qm = this.qm._whereAnd(this.key, "$gt",  value); return this; },
-		isIn: function (value) { this.qm = this.qm._whereAnd(this.key, "$in",  value); return this; },
-		lt:   function (value) { this.qm = this.qm._whereAnd(this.key, "$lt",  value); return this; },
-		lte:  function (value) { this.qm = this.qm._whereAnd(this.key, "$lte", value); return this; },
-		ne:   function (value) { this.qm = this.qm._whereAnd(this.key, "$ne",  value); return this; },
-		nin:  function (value) { this.qm = this.qm._whereAnd(this.key, "$nin", value); return this; },
-		exists: function () { this.qm = this.qm._whereAnd(this.key, "$exists", true); return this; },
-
 		where: function (key) { return this.qm.where(key); },
 		limit: function (limit) { return this.qm.limit(limit); },
 		skip: function (skip) { return this.qm.skip(skip); },
