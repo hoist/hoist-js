@@ -298,6 +298,11 @@
 			return new QueryManager(this, { skip: skip });
 		},
 		
+		sort: function () {
+			var qm = new QueryManager(this, {});
+			return qm.sort.apply(qm, arguments);
+		},
+		
 		sortBy: function (key, dir) {
 			return new QueryManager(this, { sort: [[ key, dir || 1 ]] });
 		},
@@ -402,6 +407,24 @@
 		skip: function (skip) {
 			var query = extend({}, this.query);
 			query.skip = skip;
+			return new QueryManager(this.dm, query);
+		},
+		
+		sort: function () {
+			var sorts = [];
+		
+			for (var i = 0; i < arguments.length; i++) {
+				if (arguments[i].slice(-4).toLowerCase() == " asc") {
+					sorts.push([ arguments[i].slice(0, -4), 1 ]);
+				} else if (arguments[i].slice(-5).toLowerCase() == " desc") {
+					sorts.push([ arguments[i].slice(0, -5), -1 ]);
+				} else {
+					sorts.push([ arguments[i], 1 ]);
+				}
+			}
+			
+			var query = extend({}, this.query);
+			query.sort = sorts;
 			return new QueryManager(this.dm, query);
 		},
 		
