@@ -10,6 +10,13 @@
 		for (var x in from) into[x] = from[x];
 		return into;
 	}
+	
+	function extendAliases(into, from) {
+		for (var x in from) {
+			var xs = x.split(' ');
+			for (var i = 0; i < xs.length; i++) into[xs[i]] = from[x];
+		}
+	}
 
 	function get(obj, key, nothing) {
 		if (key.indexOf('.') == -1) {
@@ -31,14 +38,132 @@
 	}
 
 	function asyncError(error, context) {
-		if (typeof error !== "function") return;
+		var promise = new Promise();
 
 		var args = splice.call(arguments, 2);
-
-		setTimeout(function () {
+		
+		promise.reject(args[0]);
+	
+		if (typeof error === "function") {
 			error.apply(context, args);
-		}, 0);
+		}
+		
+		return promise;
 	}
+	
+	function Promise() {
+		this.cbs = [];
+	}
+	
+	extend(Promise.prototype, {
+		resolve: function (value) {
+			if (this.state) return;
+			
+			var then = value && value.then,
+				self = this,
+				called;
+			
+			if (typeof then === "function") {
+				try {
+					then.call(value, function (value) {
+						if (!called) {
+							called = true;
+							self.resolve(value);
+						}
+					}, function (value) {
+						if (!called) {
+							called = true;
+							self.reject(value);
+						}
+					});
+				}
+				catch (e) {
+					if (!called) {
+						called = true;
+						this.reject(e);
+					}
+				}
+			} else {
+				this.state = 1;
+				this.value = value;
+			
+				for (var i = 0; i < this.cbs.length; i++) {
+					var success = this.cbs[i][0],
+						promise = this.cbs[i][2];
+					
+					try {
+						if (typeof success === "function") {
+							promise.resolve(success(value));
+						} else {
+							promise.resolve(value);
+						}
+					}
+					catch (e) {
+						promise.reject(e);
+					}
+				}
+				
+				this.cbs = null;
+			}
+		},
+		
+		reject: function (value) {
+			if (this.state) return;
+		
+			this.state = -1;
+			this.value = value;
+			
+			for (var i = 0; i < this.cbs.length; i++) {
+				var error = this.cbs[i][1],
+					promise = this.cbs[i][2];
+					
+				try {
+					if (typeof error === "function") {
+						promise.resolve(error(value));
+					} else {
+						promise.reject(value);
+					}
+				}
+				catch (e) {
+					promise.reject(e);
+				}
+			}
+				
+			this.cbs = null;
+		},
+	
+		then: function (success, error) {
+			var promise = new Promise();
+		
+			if (this.state) {
+				var ret;
+			
+				try {
+					if (this.state == 1) {
+						if (typeof success === "function") {
+							promise.resolve(success(this.value));
+						} else {
+							promise.resolve(this.value);
+						}
+					} else {
+						if (typeof error === "function") {
+							promise.resolve(error(this.value));
+						} else {
+							promise.reject(this.value);
+						}
+					}
+				}
+				catch (e) {
+					promise.reject(e);
+				}
+				
+			} else {
+				this.cbs.push([ success, error, promise ]);
+			}
+			
+			return promise;
+		}
+	});
 
 	// ajax helper
 
@@ -97,6 +222,8 @@
 		}
 
 		xhr.withCredentials = true;
+		
+		var promise = new Promise();
 
 		xhr.onreadystatechange = function () {
 			if (xhr.readyState === 4) {
@@ -109,15 +236,25 @@
 					} else if (type === "ArrayBuffer" && responseType === "blob") {
 						response = new Blob([response]);
 					}
+					
+					if (opts.process) response = opts.process(response);
 
 					success && success.call(context, response, xhr);
+					promise.resolve(response);
 				} else {
-					error && error.call(context, xhr.statusText, xhr);
+					var message = xhr.statusText;
+				
+					if (opts.processError) message = opts.processError(message);
+				
+					error && error.call(context, message, xhr);
+					promise.reject(message);
 				}
 			}
 		};
 
 		xhr.send(opts.data);
+		
+		return promise;
 	}
 
 	// simple data manager
@@ -139,9 +276,9 @@
 			}
 
 			if (id) {
-				request(this.hoist._configs, { url: this.url + "/" + id, bucket: this.bucket }, success, error, context);
+				return request(this.hoist._configs, { url: this.url + "/" + id, bucket: this.bucket }, success, error, context);
 			} else {
-				request(this.hoist._configs, { url: this.url, bucket: this.bucket }, success, error, context);
+				return request(this.hoist._configs, { url: this.url, bucket: this.bucket }, success, error, context);
 			}
 		},
 		
@@ -161,6 +298,11 @@
 			return new QueryManager(this, { skip: skip });
 		},
 		
+		sort: function () {
+			var qm = new QueryManager(this, {});
+			return qm.sort.apply(qm, arguments);
+		},
+		
 		sortBy: function (key, dir) {
 			return new QueryManager(this, { sort: [[ key, dir || 1 ]] });
 		},
@@ -177,16 +319,21 @@
 			var singleton = classOf(data) === "Array" && data.length === 1;
 
 			if (id) {
-				request(this.hoist._configs, { url: this.url + "/" + id, bucket: this.bucket, data: data }, success, error, context);
+				return request(this.hoist._configs, { url: this.url + "/" + id, bucket: this.bucket, data: data }, success, error, context);
 			} else {
-				request(this.hoist._configs, { url: this.url, bucket: this.bucket, data: data }, success && function (resp, xhr) {
-					success.call(this, singleton ? [resp] : resp, xhr);
-				}, error, context);
+				return request(this.hoist._configs, {
+					url: this.url,
+					bucket: this.bucket,
+					data: data,
+					process: function (resp) {
+						return singleton ? [resp] : resp;
+					}
+				}, success, error, context);
 			}
 		},
 
 		clear: function (success, error, context) {
-			request(this.hoist._configs, { url: this.url, bucket: this.bucket, method: "DELETE" }, success, error, context);
+			return request(this.hoist._configs, { url: this.url, bucket: this.bucket, method: "DELETE" }, success, error, context);
 		},
 
 		remove: function (id, success, error, context) {
@@ -194,7 +341,7 @@
 				return asyncError(error, context, "Cannot remove model with empty id", null);
 			}
 
-			request(this.hoist._configs, { url: this.url + "/" + id, bucket: this.bucket, method: "DELETE" }, success, error, context);
+			return request(this.hoist._configs, { url: this.url + "/" + id, bucket: this.bucket, method: "DELETE" }, success, error, context);
 		},
 
 		use: function (bucket) {
@@ -218,7 +365,7 @@
 			if (this.query.skip) parts.push("skip=" + this.query.skip);
 			if (this.query.sort) parts.push("sort=" + encodeURIComponent(JSON.stringify(this.query.sort)));
 			
-			request(this.dm.hoist._configs, { url: this.dm.url + "?" + parts.join('&'), bucket: this.dm.bucket }, success, error, context);
+			return request(this.dm.hoist._configs, { url: this.dm.url + "?" + parts.join('&'), bucket: this.dm.bucket }, success, error, context);
 		},
 		
 		where: function (key, value) {
@@ -263,6 +410,24 @@
 			return new QueryManager(this.dm, query);
 		},
 		
+		sort: function () {
+			var sorts = [];
+		
+			for (var i = 0; i < arguments.length; i++) {
+				if (arguments[i].slice(-4).toLowerCase() == " asc") {
+					sorts.push([ arguments[i].slice(0, -4), 1 ]);
+				} else if (arguments[i].slice(-5).toLowerCase() == " desc") {
+					sorts.push([ arguments[i].slice(0, -5), -1 ]);
+				} else {
+					sorts.push([ arguments[i], 1 ]);
+				}
+			}
+			
+			var query = extend({}, this.query);
+			query.sort = sorts;
+			return new QueryManager(this.dm, query);
+		},
+		
 		sortBy: function (key, dir) {
 			var query = extend({}, this.query);
 			query.sort = [[ key, dir || 1 ]];
@@ -288,21 +453,32 @@
 		this.key = key;
 	}
 	
+	extendAliases(PartialQueryManager.prototype, {
+		"eq is equals":
+			function (value) { this.qm = this.qm._where(this.key, value); return this; },
+		"gt greaterThan":
+			function (value) { this.qm = this.qm._whereAnd(this.key, "$gt",  value); return this; },
+		"gte ge":
+			function (value) { this.qm = this.qm._whereAnd(this.key, "$gte", value); return this; },
+		"elem in":
+			function (value) { this.qm = this.qm._whereAnd(this.key, "$in",  value); return this; },
+		"lt lessThan":
+			function (value) { this.qm = this.qm._whereAnd(this.key, "$lt",  value); return this; },
+		"lte le":
+			function (value) { this.qm = this.qm._whereAnd(this.key, "$lte", value); return this; },
+		"neq ne isnt notEquals":
+			function (value) { this.qm = this.qm._whereAnd(this.key, "$ne",  value); return this; },
+		"nelem nin notIn notElem":
+			function (value) { this.qm = this.qm._whereAnd(this.key, "$nin", value); return this; },
+		"exists":
+			function () { this.qm = this.qm._whereAnd(this.key, "$exists", true); return this; }
+	});
+	
 	extend(PartialQueryManager.prototype, {
-		eq:   function (value) { this.qm = this.qm._where(this.key, value); return this; },
-		gt:   function (value) { this.qm = this.qm._whereAnd(this.key, "$gt",  value); return this; },
-		gte:  function (value) { this.qm = this.qm._whereAnd(this.key, "$gte", value); return this; },
-		gt:   function (value) { this.qm = this.qm._whereAnd(this.key, "$gt",  value); return this; },
-		isIn: function (value) { this.qm = this.qm._whereAnd(this.key, "$in",  value); return this; },
-		lt:   function (value) { this.qm = this.qm._whereAnd(this.key, "$lt",  value); return this; },
-		lte:  function (value) { this.qm = this.qm._whereAnd(this.key, "$lte", value); return this; },
-		ne:   function (value) { this.qm = this.qm._whereAnd(this.key, "$ne",  value); return this; },
-		nin:  function (value) { this.qm = this.qm._whereAnd(this.key, "$nin", value); return this; },
-		exists: function () { this.qm = this.qm._whereAnd(this.key, "$exists", true); return this; },
-
 		where: function (key) { return this.qm.where(key); },
 		limit: function (limit) { return this.qm.limit(limit); },
 		skip: function (skip) { return this.qm.skip(skip); },
+		sort: function () { return this.qm.sort.apply(this.qm, arguments); },
 		sortBy: function (key, dir) { return this.qm.sortBy(key, dir); },
 		thenBy: function (key, dir) { return this.qm.sortBy(key, dir); },
 		
@@ -347,7 +523,8 @@
 				result = {},
 				managers = {},
 				hoist = this.hoist,
-				failed;
+				failed,
+				promise = new Promise();
 
 			if (typeof data === "function") {
 				context = error;
@@ -379,7 +556,9 @@
 						succeed(key)(null);
 					} else {
 						failed = true;
-						error && error.call(context, key + ": " + msg, xhr);
+						msg = key + ": " + msg;
+						error && error.call(context, msg, xhr);
+						promise.reject(msg);
 					}
 				};
 			}
@@ -418,40 +597,45 @@
 					loading++;
 				}
 
-				if (!loading) success.call(context, result, managers);
+				if (!loading) {
+					success && success.call(context, result, managers);
+					promise.resolve(result);
+				}
 			}
 
 			advance();
+			
+			return promise;
 		}
 	});
 
 	var bucketManagerMethods = {
 		get: function (type, id, success, error, context) {
-			this.hoist(type, this.bucket).get(id, success, error, context);
+			return this.hoist(type, this.bucket).get(id, success, error, context);
 		},
 
 		post: function (type, id, success, error, context) {
-			this.hoist(type, this.bucket).post(id, data, success, error, context);
+			return this.hoist(type, this.bucket).post(id, data, success, error, context);
 		},
 
 		clear: function (type, success, error, context) {
-			this.hoist(type, this.bucket).clear(success, error, context);
+			return this.hoist(type, this.bucket).clear(success, error, context);
 		},
 
 		remove: function (type, id, success, error, context) {
-			this.hoist(type, this.bucket).remove(id, success, error, context);
+			return this.hoist(type, this.bucket).remove(id, success, error, context);
 		},
 
 		meta: function (data, success, error, context) {
-			this.hoist.bucket.meta(this.bucket, data, success, error, context);
+			return this.hoist.bucket.meta(this.bucket, data, success, error, context);
 		},
 
 		invite: function (data, success, error, context) {
-			this.hoist.bucket.invite(this.bucket, data, success, error, context);
+			return this.hoist.bucket.invite(this.bucket, data, success, error, context);
 		},
 
 		enter: function (success, error, context) {
-			this.hoist.bucket.set(this.bucket, success, error, context);
+			return this.hoist.bucket.set(this.bucket, success, error, context);
 		}
 	};
 	
@@ -461,19 +645,19 @@
 		},
 
 		get: function (type, id, success, error, context) {
-			this(type).get(id, success, error, context);
+			return this(type).get(id, success, error, context);
 		},
 
 		post: function (type, id, data, success, error, context) {
-			this(type).post(id, data, success, error, context);
+			return this(type).post(id, data, success, error, context);
 		},
 
 		clear: function (type, success, error, context) {
-			this(type).clear(success, error, context);
+			return this(type).clear(success, error, context);
 		},
 
 		remove: function (type, id, success, error, context) {
-			this(type).remove(id, success, error, context);
+			return this(type).remove(id, success, error, context);
 		},
 
 		config: function (a, b) {
@@ -499,24 +683,32 @@
 			if (!context) context = error;
 				error = null;
 			}
-			
-			request(this._configs, { url: "auth.hoi.io/status" }, function (resp) {
-				hoist._user = resp;
-				success && success.apply(this, arguments);
-			}, function () {
-				hoist._user = null;
-				error && error.apply(this, arguments);
-			}, context);
+
+			return request(this._configs, {
+				url: "auth.hoi.io/status",
+				process: function (resp) {
+					hoist._user = resp;
+					return resp;
+				},
+				processError: function (msg) {
+					hoist._user = null;
+					return msg;
+				}
+			}, success, error, context);
 		},
 
 		signup: function (member, success, error, context) {
 			var hoist = this;
 			
 			if (typeof member === "object") {
-				request(this._configs, { url: "auth.hoi.io/user", data: member }, function (resp) {
-					hoist._user = resp;
-					success && success.apply(this, arguments);
-				}, error, context);
+				return request(this._configs, {
+					url: "auth.hoi.io/user",
+					data: member,
+					process: function (resp) {
+						hoist._user = resp;
+						return resp;
+					}
+				}, success, error, context);
 			}
 		},
 
@@ -524,30 +716,42 @@
 			var hoist = this;
 			
 			if (typeof member === "object") {
-				request(this._configs, { url: "auth.hoi.io/login", data: member }, function (resp) {
-					hoist._user = resp;
-					success && success.apply(this, arguments);
-				}, error, context);
+				return request(this._configs, {
+					url: "auth.hoi.io/login",
+					data: member,
+					process: function (resp) {
+						hoist._user = resp;
+						return resp;
+					}
+				}, success, error, context);
 			}
 		},
 
 		logout: function (success, error, context) {
 			var hoist = this;
 
-			request(this._configs, { url: "auth.hoi.io/logout", method: "POST" }, function () {
-				hoist._user = null;
-				hoist._bucket = null;
-				success && success.apply(this, arguments);
-			}, error, context);
+			return request(this._configs, {
+				url: "auth.hoi.io/logout",
+				method: "POST",
+				process: function (resp) {
+					hoist._user = null;
+					hoist._bucket = null;
+					return resp;
+				}
+			}, success, error, context);
 		},
 
 		accept: function (code, data, success, error, context) {
 			var hoist = this;
 
-			request(this._configs, { url: "auth.hoi.io/invite/" + code + "/user", data: data }, function (resp) {
-				hoist._user = resp;
-				success && success.apply(this, arguments);
-			}, error, context);
+			return request(this._configs, {
+				url: "auth.hoi.io/invite/" + code + "/user",
+				data: data,
+				process: function (resp) {
+					hoist._user = resp;
+					return resp;
+				}
+			}, success, error, context);
 		},
 
 		user: function () {
@@ -562,9 +766,11 @@
 				data = id.data;
 				id = id.id;
 			}
-
+			
 			if (typeof data === "object") {
-				request(this._configs, { url: "notify.hoi.io/notification/" + id, data: data }, success, error, context);
+				return request(this._configs, { url: "notify.hoi.io/notification/" + id, data: data }, success, error, context);
+			} else {
+				return asyncError(error, context, "data for notification must be an object");
 			}
 		},
 
@@ -591,16 +797,14 @@
 				error = success;
 				success = file;
 
-				request(this._configs, { url: "file.hoi.io/" + key, responseType: "blob" }, success, error, context);
-				return;
+				return request(this._configs, { url: "file.hoi.io/" + key, responseType: "blob" }, success, error, context);
 			} else if (type === "Undefined") {
-				request(this._configs, { url: "file.hoi.io/" + key, responseType: "blob" }, success, error, context);
-				return;
+				return request(this._configs, { url: "file.hoi.io/" + key, responseType: "blob" }, success, error, context);
 			} else {
-				return;
+				return asyncError(error, context, "can't send file of type " + type);
 			}
 
-			request(this._configs, { url: "file.hoi.io/" + key, data: data }, success, error, context);
+			return request(this._configs, { url: "file.hoi.io/" + key, data: data }, success, error, context);
 		},
 
 		use: function (bucket) {
@@ -608,7 +812,7 @@
 
 			var manager = extend(function (type) {
 				if (classOf(type) === "Object") {
-					return new ObjectDataManager(hoist, type, bucket);
+					return new ObjectDataManager(manager, type);
 				} else {
 					return new DataManager(hoist, type, bucket);
 				}
@@ -638,14 +842,18 @@
 				if (!context) context = error;
 				error = null;
 			}
-			
-			request(this._hoist._configs, { url: "auth.hoi.io/bucket/current" }, function (bucket) {
-				hoist._bucket = bucket;
-				success && success.apply(this, arguments);
-			}, function () {
-				hoist._bucket = null;
-				error && error.apply(this, arguments);
-			}, context);
+
+			return request(this._hoist._configs, {
+				url: "auth.hoi.io/bucket/current",
+				process: function (bucket) {
+					hoist._bucket = bucket;
+					return bucket;
+				},
+				processError: function (message) {
+					hoist._bucket = null;
+					return message;
+				}
+			}, success, error, context);
 		},
 
 		post: function (id, data, success, error, context) {
@@ -665,9 +873,9 @@
 			}
 
 			if (id) {
-				request(this._hoist._configs, { url: "auth.hoi.io/bucket/" + id, data: data }, success, error, context);
+				return request(this._hoist._configs, { url: "auth.hoi.io/bucket/" + id, data: data }, success, error, context);
 			} else {
-				request(this._hoist._configs, { url: "auth.hoi.io/bucket", data: data }, success, error, context);
+				return request(this._hoist._configs, { url: "auth.hoi.io/bucket", data: data }, success, error, context);
 			}
 		},
 
@@ -687,26 +895,34 @@
 				key = hoist._bucket.key;
 			}
 
-			request(hoist._configs, { url: "auth.hoi.io/bucket/" + key + "/meta", data: meta }, function (bucket) {
-				if (hoist._bucket && hoist._bucket.key == bucket.key) {
-					hoist._bucket = bucket;
+			return request(hoist._configs, {
+				url: "auth.hoi.io/bucket/" + key + "/meta",
+				data: meta,
+				process: function (bucket) {
+					if (hoist._bucket && hoist._bucket.key == bucket.key) {
+						hoist._bucket = bucket;
+					}
+					
+					return bucket;
 				}
-
-				success && success.apply(this, arguments);
-			}, error, context);
+			}, success, error, context);
 		},
 
 		set: function (key, success, error, context) {
 			var hoist = this._hoist;
 
-			request(this._hoist._configs, { url: "auth.hoi.io/bucket/current/" + (key || "default"), method: "POST" }, function (bucket) {
-				hoist._bucket = key ? bucket : null;
-				success && success.apply(this, arguments);
-			}, error, context);
+			return request(this._hoist._configs, {
+				url: "auth.hoi.io/bucket/current/" + (key || "default"),
+				method: "POST",
+				process: function (bucket) {
+					hoist._bucket = key ? bucket : null;
+					return bucket;
+				}
+			}, success, error, context);
 		},
 
 		list: function (success, error, context) {
-			request(this._hoist._configs, { url: "auth.hoi.io/buckets" }, success, error, context);
+			return request(this._hoist._configs, { url: "auth.hoi.io/buckets" }, success, error, context);
 		},
 
 		invite: function (key, data, success, error, context) {
@@ -721,12 +937,15 @@
 			var hoist = this._hoist;
 
 			if (!key || hoist._bucket && hoist._bucket.key == key) {
-				request(hoist._configs, { url: "auth.hoi.io/invite", data: data }, success, error, context);
+				return request(hoist._configs, { url: "auth.hoi.io/invite", data: data }, success, error, context);
 			} else {
 				// switch bucket so you can invite the user into the right one -- this is suboptimal but works for now
-				this.set(key, function () {
-					request(hoist._configs, { url: "auth.hoi.io/invite", data: data }, success, error, this);
-				}, error, context);
+				
+				return this.set(key).then(function () {
+					return request(hoist._configs, { url: "auth.hoi.io/invite", data: data }, success, context);
+				}, function (message) {
+					error && error.call(context, message);
+				});
 			}
 		}
 	};
