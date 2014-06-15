@@ -298,13 +298,9 @@
 			return new QueryManager(this, { skip: skip });
 		},
 		
-		sort: function () {
+		sortBy: function () {
 			var qm = new QueryManager(this, {});
-			return qm.sort.apply(qm, arguments);
-		},
-		
-		sortBy: function (key, dir) {
-			return new QueryManager(this, { sort: [[ key, dir || 1 ]] });
+			return qm._sort(false, arguments);
 		},
 
 		post: function (id, data, success, error, context) {
@@ -410,35 +406,30 @@
 			return new QueryManager(this.dm, query);
 		},
 		
-		sort: function () {
-			var sorts = [];
+		_sort: function (append, args) {
+			var sort = append && this.query.sort && this.query.sort.slice() || [];			
 		
-			for (var i = 0; i < arguments.length; i++) {
-				if (arguments[i].slice(-4).toLowerCase() == " asc") {
-					sorts.push([ arguments[i].slice(0, -4), 1 ]);
-				} else if (arguments[i].slice(-5).toLowerCase() == " desc") {
-					sorts.push([ arguments[i].slice(0, -5), -1 ]);
+			for (var i = 0; i < args.length; i++) {
+				if (args[i].slice(-4).toLowerCase() == " asc") {
+					sort.push([ args[i].slice(0, -4), 1 ]);
+				} else if (args[i].slice(-5).toLowerCase() == " desc") {
+					sort.push([ args[i].slice(0, -5), -1 ]);
 				} else {
-					sorts.push([ arguments[i], 1 ]);
+					sort.push([ args[i], 1 ]);
 				}
 			}
 			
 			var query = extend({}, this.query);
-			query.sort = sorts;
+			query.sort = sort;
 			return new QueryManager(this.dm, query);
 		},
 		
-		sortBy: function (key, dir) {
-			var query = extend({}, this.query);
-			query.sort = [[ key, dir || 1 ]];
-			return new QueryManager(this.dm, query);
+		sortBy: function () {
+			return this._sort(false, arguments);
 		},
 		
-		thenBy: function (key, dir) {
-			var query = extend({}, this.query);
-			query.sort = query.sort ? query.sort.slice() : [];
-			query.sort.push([ key, dir || 1 ]);
-			return new QueryManager(this.dm, query);
+		thenBy: function () {
+			return this._sort(true, arguments);
 		},
 		
 		use: function (bucket) {
@@ -479,8 +470,8 @@
 		limit: function (limit) { return this.qm.limit(limit); },
 		skip: function (skip) { return this.qm.skip(skip); },
 		sort: function () { return this.qm.sort.apply(this.qm, arguments); },
-		sortBy: function (key, dir) { return this.qm.sortBy(key, dir); },
-		thenBy: function (key, dir) { return this.qm.sortBy(key, dir); },
+		sortBy: function () { return this.qm._sort(false, arguments); },
+		thenBy: function () { return this.qm._sort(true, arguments); },
 		
 		get: function (success, error, context) {
 			return this.qm.get(success, error, context);
