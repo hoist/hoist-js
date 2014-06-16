@@ -696,6 +696,9 @@
 					url: "auth.hoi.io/user",
 					data: member,
 					process: function (resp) {
+						if (resp.redirectUrl) {
+							window.location = resp.redirectUrl;
+						}
 						hoist._user = resp;
 						return resp;
 					}
@@ -711,6 +714,9 @@
 					url: "auth.hoi.io/login",
 					data: member,
 					process: function (resp) {
+						if (resp.redirectUrl) {
+							window.location = resp.redirectUrl;
+						}
 						hoist._user = resp;
 						return resp;
 					}
