@@ -224,7 +224,7 @@ Once you're in a bucket, you can use the following to set the metadata of the cu
 	Hoist.bucket(meta, …)
 
 After the bucket is set or the status is checked, the library will remember the current bucket with its metadata.
-You can simply call `Hoist.bucket()` to get it.
+You can simply call `Hoist.bucket()` to get it. (Note that calling `Hoist.bucket()` without arguments does not return a promised call to get the bucket status. You must use the long form `Hoist.bucket.status()` in this case.)
 
 Finally, to invite a user to the current bucket, do:
 
