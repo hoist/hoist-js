@@ -7,6 +7,12 @@ The library must be given the api key for your application before any other acti
 	Hoist.apiKey(apiKey);
 	Hoist.config("apiKey", apiKey);
 	
+When your app is hosted on Hoist (as even-cushion.app.hoi.io, say), it has an endpoint /settings which knows the api key and the current environment. To read from the endpoint and set the Hoist config automatically, you can simply call
+
+	Hoist.config(…)
+	
+providing a callback as discussed below. You may find it useful to create a json file called settings in your development environment to mimic this behaviour.
+
 You might want to be able to talk to multiple Hoist applications. In this case, you should call `Hoist.clone()` and set the api key for the new copy:
 
 	var OtherHoist = Hoist.clone();
@@ -25,6 +31,8 @@ In the api methods listed below, the argument list can be terminated with any of
 - `success, context`
 - `success`
 - &#248;
+
+Any method that takes these callbacks will also return a Promises/A+ conforming promise. (If for some strange reason you are mixing these two conventions, the callback in the argument will be called before any callbacks attached to the promise.)
 
 ##Membership
 
