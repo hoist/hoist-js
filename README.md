@@ -45,7 +45,7 @@ To log the user in or out or to create a new user, use the following, respective
 After any of these methods has been successfully called, the library will remember the user object returned. This can be accessed by calling `Hoist.user()`.
 
 ###Social Signup/Login
-## To sign up with Google / Facebook
+#### To sign up new users with Google / Facebook
 
 POST /user
 	{"provider" : "facebook" | "google" }
@@ -63,7 +63,7 @@ if they fail then it will redirect to the orgin of the call with the query strin
 
 They will be logged in on the return if successful
 
-## To login with Google / Facebook
+#### To login with Google / Facebook
 
 POST /login
 
