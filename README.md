@@ -62,7 +62,8 @@ returns
 
 	{"redirectUrl": <some url> }
 
-You should then redirect to that URL to complete the signup process; the user will then go to login / accept the permissions on the provider website (both services request access to the users Email Address).
+You should then redirect to that URL to complete the signup process; the user will then go to login / accept the
+permissions on the provider website (both services request access to the users Email Address).
 
 If the user accepts the permissions then they will be redirected to the origin of the /user call with the query string ?create=true
 If the user refuses, then it will redirect to the origin of the call with the query string ?create=false
@@ -90,7 +91,8 @@ NOTE: You are expected to redirect from the /login or /user in a timely fashion 
 
 ##Data
 
-The data methods can be used in two ways. A "data manager" can be created by passing a model type to the Hoist function, and then the methods can be called on the resulting object:
+The data methods can be used in two ways. A "data manager" can be created by passing a model type to the Hoist
+function, and then the methods can be called on the resulting object:
 
 	var projects = Hoist("project");
 
@@ -204,10 +206,23 @@ You can simply call `Hoist.bucket()` to get it.
 Finally, to invite a user to the current bucket, do:
 
 	Hoist.bucket.invite({ "email": "boris@daspem.com" }, …)
+	
+Many times it doesn't make sense to rely on state on the server to remember which bucket you're in. To get a
+Hoist data manager whose calls are always scoped to a given bucket, use the `use()` method in either of the
+following ways:
+
+	var bucketHoist = Hoist.use("my-bucket-key");
+	bucketHoist("model-type").get(…);
+	
+	var modelTypeManager = Hoist("model-type");
+	modelTypeManager.use("bucket-key").get(…);
 
 ## Aggregating data calls
 
-If your project is of a decent size, you will probably find that on page load you are getting a bunch of models of different types in a fairly straightforward fashion. Instead of nesting a bunch of callbacks, you can provide the `Hoist` function with a hash instead of a model type. For example, if you want to load all models of type "article" and "section", you can use:
+If your project is of a decent size, you will probably find that on page load you are getting a bunch of models of
+different types in a fairly straightforward fashion. Instead of nesting a bunch of callbacks, you can provide the
+`Hoist` function with a hash instead of a model type. For example, if you want to load all models of type "article"
+and "section", you can use:
 
 	Hoist({
 		articles: "article",
@@ -217,7 +232,8 @@ If your project is of a decent size, you will probably find that on page load yo
 		doSectionStuff(data.sections);
 	});
 
-Single models can be retrieved in this way by setting the value in the hash to be the model type and the model id, separated by a space:
+Single models can be retrieved in this way by setting the value in the hash to be the model type and the model id,s
+eparated by a space:
 
 	Hoist.get({
 		membership: "membership 63688436-9bd4-4fc6-8c2c-ab3398ec2961",
@@ -226,7 +242,10 @@ Single models can be retrieved in this way by setting the value in the hash to b
 		// do the things
 	});
 
-If the type or id of one model being retrieved depends on the property of another, use square brackets to indicate these dependencies, and the library will make sure to request the data in the right order, then swap out the tags before making the calls. You can also provide a string (accessible as `[id]`) or hash (accessible through its property names) as the first argument of the `get(…)` function as additional context. This allows things like:
+If the type or id of one model being retrieved depends on the property of another, use square brackets to indicate
+these dependencies, and the library will make sure to request the data in the right order, then swap out the tags
+before making the calls. You can also provide a string (accessible as `[id]`) or hash (accessible through its
+property names) as the first argument of the `get(…)` function as additional context. This allows things like:
 
 	var allData = Hoist({
 		membership: "membership [id]",
