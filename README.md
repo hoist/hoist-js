@@ -169,7 +169,7 @@ The predicates supported in where clauses (like `equals` in the last example abo
 - `notElem`, `notIn`, `nelem` or `nin`: test non-containment
 - `exists`: test property existence
 
-At the moment the query manager object returned by these methods only supports the get and use methods.
+At the moment the query manager object returned by these methods only supports the `get()` and `use()` methods.
 
 ##File
 
