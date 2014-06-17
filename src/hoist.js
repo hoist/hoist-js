@@ -191,13 +191,13 @@
 			error = null;
 		}
 
-		if (!configs.apikey) {
+		if (configs && !configs.apikey) {
 			return asyncError(error, context, "API key not set", null);
 		}
 
 		var xhr = new XMLHttpRequest();
 
-		xhr.open(method, configs.protocol + opts.url);
+		xhr.open(method, configs ? configs.protocol + opts.url : opts.url);
 
 		responseType = opts.responseType || "json";
 
@@ -215,7 +215,9 @@
 
 		contentType && xhr.setRequestHeader("Content-Type", contentType);
 
-		xhr.setRequestHeader("Authorization", "Hoist " + configs.apikey);
+		if (configs) {
+			xhr.setRequestHeader("Authorization", "Hoist " + configs.apikey);
+		}
 
 		if (opts.bucket) {
 			xhr.setRequestHeader("x-bucket-key", opts.bucket);
@@ -651,7 +653,7 @@
 			return this(type).remove(id, success, error, context);
 		},
 
-		config: function (a, b) {
+		config: function (a, b, c) {
 			if (b === u) {
 				var type = typeof a;
 
@@ -661,6 +663,16 @@
 					for (var x in a) {
 						this._configs[x.toLowerCase()] = a[x];
 					}
+				} else if (type === "function" || type === "undefined") {
+					var hoist = this;
+				
+					return request(null, {
+						url: "/settings",
+						process: function (settings) {
+							hoist.config(settings);
+							return settings;
+						}
+					}, a, b, c);
 				}
 			} else {
 				this._configs[a.toLowerCase()] = b;
