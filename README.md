@@ -34,7 +34,7 @@ In the api methods listed below, the argument list can be terminated with any of
 
 Any method that takes these callbacks will also return a Promises/A+ conforming promise. (If for some strange reason you are mixing these two conventions, the callback in the argument will be called before any callbacks attached to the promise.)
 
-##Membership
+##Identity
 
 Use `Hoist.status(…)` to check whether the user is logged in:
 
@@ -49,59 +49,95 @@ To log the user in or out or to create a new user, use the following, respective
 	Hoist.login({ email: "bob@invalid", password: "password"}, …)
 	Hoist.logout(…)
 	Hoist.signup({ email: "bob@invalid", password: "password"}, …)
-	
+
 After any of these methods has been successfully called, the library will remember the user object returned. This can be accessed by calling `Hoist.user()`.
+
+###Social Signup/Login
+####To sign up new users with Google / Facebook
+
+POST /user
+	{"provider" : "facebook" | "google" }
+
+returns
+
+	{"redirectUrl": <some url> }
+
+You should then redirect to that URL to complete the signup process; the user will then go to login / accept the permissions on the provider website (both services request access to the users Email Address).
+
+If the user accepts the permissions then they will be redirected to the origin of the /user call with the query string ?create=true
+If the user refuses, then it will redirect to the origin of the call with the query string ?create=false
+
+They will be logged in on the return if successful
+
+####To login with Google / Facebook
+
+POST /login
+
+	{"provider" : "facebook" | "google" }
+
+returns
+
+	{"redirectUrl": <some url> }
+
+You should then redirect to that Url
+
+The user will then go to login / accept the permissions on the provider (both request access to the users Email Address)
+
+If the user accepts the permissions then they will be redirected to the origin of the /user call with the query string ?login=true
+If the user refuses then it will redirect to the orgin of the call with the query string ?login=false
+
+NOTE: You are expected to redirect from the /login or /user in a timely fashion as the redirect contains a time sensitive token.
 
 ##Data
 
 The data methods can be used in two ways. A "data manager" can be created by passing a model type to the Hoist function, and then the methods can be called on the resulting object:
 
 	var projects = Hoist("project");
-	
+
 	// get all projects
 
 	projects.get(function (data) {
 		console.log("Got " + data.length + " projects");
 	});
-	
+
 	// get a single project by id
-	
+
 	projects.get(projectId, function (data) {
-	
+
 	});
-	
+
 	// save an object; the object returned will have an _id parameter.
 	// anything passed to this method with an _id parameter will overwrite
 	// the object with the given id.
-	
+
 	// You can post multiple objects by passing an array instead.
-	
+
 	projects.post({
 		name: "Cool Project",
 		coolness: "Very Cool"
 	}, function (data) {
 		console.log("Project " + data.name + " has been saved with id " + data._id);
 	});
-	
+
 	// save an object by id
-	
+
 	projects.post("cool-project", {
 		name: "Cool Project",
 		coolness: "Super Cool"
 	});
-	
+
 	// delete all projects
-	
+
 	projects.clear(function () {
 		console.log("No more projects.");
 	});
-	
+
 	// delete a single project
-	
+
 	projects.remove("cool-project", function () {
 		console.log("no more cool project.");
 	});
-	
+
 A shorthand can be used if you have no need for the "data manager" pattern:
 
 	Hoist.get(modelType, id, …)
@@ -127,14 +163,14 @@ To send the notification with template id `id`, populated with the data `data`, 
 
 	Hoist.notify(id, data, …)
 	Hoist.notify({id: id, data: data}, …)
-	
+
 ## Switching buckets
 
 Hoist provides buckets to allow different members access to different data. When the member logs in, they
 start out in the default bucket. Use the following method to list the buckets the current member has access to.
 
 	Hoist.bucket.list(…)
-	
+
 Use one of the following to create a new bucket, with key `key` and attached metadata `meta`. The bucket created
 will be owned by the current user.
 
@@ -144,12 +180,12 @@ will be owned by the current user.
 To update the metadata of the bucket with a given key, call the following:
 
 	Hoist.bucket.meta(key, meta, …)
-	
+
 To set the current bucket, use one of
 
 	Hoist.bucket.set(key, …)
 	Hoist.bucket(key, …)
-	
+
 where `key` is the key for the bucket that you want to enter, or `null` for the default bucket.
 
 To check what bucket the member is currently in, use one of the following. The `success` callback will be called
@@ -157,14 +193,14 @@ with the current bucket if there is one; otherwise the `error` callback will be 
 
 	Hoist.bucket.status(…)
 	Hoist.bucket(…)
-	
+
 Once you're in a bucket, you can use the following to set the metadata of the current bucket.
 
 	Hoist.bucket(meta, …)
-	
+
 After the bucket is set or the status is checked, the library will remember the current bucket with its metadata.
 You can simply call `Hoist.bucket()` to get it.
-	
+
 Finally, to invite a user to the current bucket, do:
 
 	Hoist.bucket.invite({ "email": "boris@daspem.com" }, …)
@@ -180,7 +216,7 @@ If your project is of a decent size, you will probably find that on page load yo
 		doArticleStuff(data.articles);
 		doSectionStuff(data.sections);
 	});
-	
+
 Single models can be retrieved in this way by setting the value in the hash to be the model type and the model id, separated by a space:
 
 	Hoist.get({
