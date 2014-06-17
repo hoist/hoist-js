@@ -449,18 +449,18 @@
 	extendAliases(PartialQueryManager.prototype, {
 		"eq is equals":
 			function (value) { this.qm = this.qm._where(this.key, value); return this; },
-		"gt greaterThan":
-			function (value) { this.qm = this.qm._whereAnd(this.key, "$gt",  value); return this; },
-		"gte ge":
-			function (value) { this.qm = this.qm._whereAnd(this.key, "$gte", value); return this; },
-		"elem in":
-			function (value) { this.qm = this.qm._whereAnd(this.key, "$in",  value); return this; },
-		"lt lessThan":
-			function (value) { this.qm = this.qm._whereAnd(this.key, "$lt",  value); return this; },
-		"lte le":
-			function (value) { this.qm = this.qm._whereAnd(this.key, "$lte", value); return this; },
 		"neq ne isnt notEquals":
 			function (value) { this.qm = this.qm._whereAnd(this.key, "$ne",  value); return this; },
+		"gt greaterThan":
+			function (value) { this.qm = this.qm._whereAnd(this.key, "$gt",  value); return this; },
+		"gte ge atLeast":
+			function (value) { this.qm = this.qm._whereAnd(this.key, "$gte", value); return this; },
+		"lt lessThan":
+			function (value) { this.qm = this.qm._whereAnd(this.key, "$lt",  value); return this; },
+		"lte le atMost":
+			function (value) { this.qm = this.qm._whereAnd(this.key, "$lte", value); return this; },
+		"elem in":
+			function (value) { this.qm = this.qm._whereAnd(this.key, "$in",  value); return this; },
 		"nelem nin notIn notElem":
 			function (value) { this.qm = this.qm._whereAnd(this.key, "$nin", value); return this; },
 		"exists":
@@ -468,12 +468,13 @@
 	});
 	
 	extend(PartialQueryManager.prototype, {
-		where: function (key) { return this.qm.where(key); },
+		where: function (key, value) { return this.qm.where(key, value); },
 		limit: function (limit) { return this.qm.limit(limit); },
 		skip: function (skip) { return this.qm.skip(skip); },
 		sort: function () { return this.qm.sort.apply(this.qm, arguments); },
 		sortBy: function () { return this.qm._sort(false, arguments); },
 		thenBy: function () { return this.qm._sort(true, arguments); },
+		use: function (bucket) { return this.qm.use(bucket); },
 		
 		get: function (success, error, context) {
 			return this.qm.get(success, error, context);

@@ -147,6 +147,29 @@ A shorthand can be used if you have no need for the "data manager" pattern:
 	Hoist.post(modelType, data, …)
 	Hoist.clear(modelType, …)
 	Hoist.remove(modelType, id, …)
+	
+### Queries
+
+The query represented by a data manager can be made more specific by using LINQ-style method chaining to add
+where clauses, sorting and paging:
+
+	Hoist("article").limit(10).skip(50).get(…) // return at most 10 articles and skip the first 50
+	Hoist("person").sortBy("LastName", "FirstName asc").thenBy("DateOfBirth desc").get(…) // sort by properties
+	Hoist("person").where("LastName").equals("Morrison").get(…) // where clauses
+	
+The predicates supported in where clauses (like `equals` in the last example above) are as follows:
+
+- `equals`, `is` or `eq`: test equality
+- `notEquals`, `isnt`, `neq` or `ne`: not equal
+- `greaterThan` or `gt`: greater than
+- `atLeast`, `gte` or `ge`: greater than or equal
+- `lessThan` or `lt`: less than
+- `atMost`, `lte` or `le`: less than or equal
+- `elem` or `in`: test containment in an array
+- `notElem`, `notIn`, `nelem` or `nin`: test non-containment
+- `exists`: test property existence
+
+At the moment the query manager object returned by these methods only supports the get and use methods.
 
 ##File
 
@@ -208,14 +231,24 @@ Finally, to invite a user to the current bucket, do:
 	Hoist.bucket.invite({ "email": "boris@daspem.com" }, …)
 	
 Many times it doesn't make sense to rely on state on the server to remember which bucket you're in. To get a
-Hoist data manager whose calls are always scoped to a given bucket, use the `use()` method in either of the
-following ways:
+Hoist data manager whose calls are always scoped to a given bucket, use the `use()` method as in the following:
 
 	var bucketHoist = Hoist.use("my-bucket-key");
-	bucketHoist("model-type").get(…);
 	
-	var modelTypeManager = Hoist("model-type");
-	modelTypeManager.use("bucket-key").get(…);
+	bucketHoist.get(…); // works as above for Hoist.get
+	bucketHoist.post(…);
+	bucketHoist.clear(…);
+	bucketHoist.remove(…);
+	
+	bucketHoist.meta(data, …); // post metadata against this bucket
+	bucketHoist.enter(…);
+	
+	var modelTypeManager = Hoist("model-type").use("bucket-key"); // or bucketHoist("model-type");
+	
+	modelTypeManager.get(…); // work as above for data managers
+	modelTypeManager.post(…);
+	modelTypeManager.clear(…);
+	modelTypeManager.remove(…);
 
 ## Aggregating data calls
 
