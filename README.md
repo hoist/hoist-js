@@ -54,12 +54,10 @@ returns
 
 	{"redirectUrl": <some url> }
 
-You should then redirect to that URL.
+You should then redirect to that URL to complete the signup process; the user will then go to login / accept the permissions on the provider website (both services request access to the users Email Address).
 
-The user will then go to login / accept the permissions on the provider website (both request access to the users Email Address)
-
-if they accept the permissions then they will be redirected to the origin of the /user call with the query string ?create=true
-if they fail then it will redirect to the orgin of the call with the query string ?create=false
+If the user accepts the permissions then they will be redirected to the origin of the /user call with the query string ?create=true
+If the user refuses, then it will redirect to the origin of the call with the query string ?create=false
 
 They will be logged in on the return if successful
 
@@ -75,12 +73,12 @@ returns
 
 You should then redirect to that Url
 
-The user will then go to login / accept the permisions on the provider (both request access to the users Email Address)
+The user will then go to login / accept the permissions on the provider (both request access to the users Email Address)
 
-If they accept the permissions then they will be redirected to the origin of the /user call with the query string ?login=true
-If they fail then it will redirect to the orgin of the call with the query string ?login=false
+If the user accepts the permissions then they will be redirected to the origin of the /user call with the query string ?login=true
+If the user refuses then it will redirect to the orgin of the call with the query string ?login=false
 
-NOTE: you are expected to redirect from the /login or /user in a timely fashion as the redirect contains a time sensitive token.
+NOTE: You are expected to redirect from the /login or /user in a timely fashion as the redirect contains a time sensitive token.
 
 ##Data
 
