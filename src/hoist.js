@@ -943,20 +943,10 @@
 				data = key;
 				key = null;
 			}
+			
+			if (key) data = _.extend({ bucket: key }, data);
 
-			var hoist = this._hoist;
-
-			if (!key || hoist._bucket && hoist._bucket.key == key) {
-				return request(hoist._configs, { url: "auth.hoi.io/invite", data: data }, success, error, context);
-			} else {
-				// switch bucket so you can invite the user into the right one -- this is suboptimal but works for now
-				
-				return this.set(key).then(function () {
-					return request(hoist._configs, { url: "auth.hoi.io/invite", data: data }, success, context);
-				}, function (message) {
-					error && error.call(context, message);
-				});
-			}
+			return request(this._hoist._configs, { url: "auth.hoi.io/invite", data: data }, success, error, context);
 		}
 	};
 
