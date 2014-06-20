@@ -10,7 +10,7 @@
 		for (var x in from) into[x] = from[x];
 		return into;
 	}
-	
+
 	function extendAliases(into, from) {
 		for (var x in from) {
 			var xs = x.split(' ');
@@ -41,28 +41,28 @@
 		var promise = new Promise();
 
 		var args = splice.call(arguments, 2);
-		
+
 		promise.reject(args[0]);
-	
+
 		if (typeof error === "function") {
 			error.apply(context, args);
 		}
-		
+
 		return promise;
 	}
-	
+
 	function Promise() {
 		this.cbs = [];
 	}
-	
+
 	extend(Promise.prototype, {
 		resolve: function (value) {
 			if (this.state) return;
-			
+
 			var then = value && value.then,
 				self = this,
 				called;
-			
+
 			if (typeof then === "function") {
 				try {
 					then.call(value, function (value) {
@@ -86,11 +86,11 @@
 			} else {
 				this.state = 1;
 				this.value = value;
-			
+
 				for (var i = 0; i < this.cbs.length; i++) {
 					var success = this.cbs[i][0],
 						promise = this.cbs[i][2];
-					
+
 					try {
 						if (typeof success === "function") {
 							promise.resolve(success(value));
@@ -102,21 +102,21 @@
 						promise.reject(e);
 					}
 				}
-				
+
 				this.cbs = null;
 			}
 		},
-		
+
 		reject: function (value) {
 			if (this.state) return;
-		
+
 			this.state = -1;
 			this.value = value;
-			
+
 			for (var i = 0; i < this.cbs.length; i++) {
 				var error = this.cbs[i][1],
 					promise = this.cbs[i][2];
-					
+
 				try {
 					if (typeof error === "function") {
 						promise.resolve(error(value));
@@ -128,16 +128,16 @@
 					promise.reject(e);
 				}
 			}
-				
+
 			this.cbs = null;
 		},
-	
+
 		then: function (success, error) {
 			var promise = new Promise();
-		
+
 			if (this.state) {
 				var ret;
-			
+
 				try {
 					if (this.state == 1) {
 						if (typeof success === "function") {
@@ -156,11 +156,11 @@
 				catch (e) {
 					promise.reject(e);
 				}
-				
+
 			} else {
 				this.cbs.push([ success, error, promise ]);
 			}
-			
+
 			return promise;
 		}
 	});
@@ -224,7 +224,7 @@
 		}
 
 		xhr.withCredentials = true;
-		
+
 		var promise = new Promise();
 
 		xhr.onreadystatechange = function () {
@@ -238,16 +238,16 @@
 					} else if (type === "ArrayBuffer" && responseType === "blob") {
 						response = new Blob([response]);
 					}
-					
+
 					if (opts.process) response = opts.process(response);
 
 					success && success.call(context, response, xhr);
 					promise.resolve(response);
 				} else {
 					var message = xhr.statusText;
-				
+
 					if (opts.processError) message = opts.processError(message);
-				
+
 					error && error.call(context, message, xhr);
 					promise.reject(message);
 				}
@@ -255,7 +255,7 @@
 		};
 
 		xhr.send(opts.data);
-		
+
 		return promise;
 	}
 
@@ -283,23 +283,23 @@
 				return request(this.hoist._configs, { url: this.url, bucket: this.bucket }, success, error, context);
 			}
 		},
-		
+
 		query: function (query) {
 			return new QueryManager(this, { q: query });
 		},
-		
+
 		where: function (key, value) {
 			return new QueryManager(this, {}).where(key, value);
 		},
-		
+
 		limit: function (limit) {
 			return new QueryManager(this, { limit: limit });
 		},
-		
+
 		skip: function (skip) {
 			return new QueryManager(this, { skip: skip });
 		},
-		
+
 		sortBy: function () {
 			var qm = new QueryManager(this, {});
 			return qm._sort(false, arguments);
@@ -346,26 +346,26 @@
 			return this.hoist(this.type, bucket);
 		}
 	});
-	
+
 	// query manager
-	
+
 	function QueryManager(dm, query) {
 		this.dm = dm;
 		this.query = query;
 	}
-	
+
 	extend(QueryManager.prototype, {
 		get: function (success, error, context) {
 			var parts = [];
-		
+
 			if (this.query.q) parts.push("q=" + encodeURIComponent(JSON.stringify(this.query.q)));
 			if (this.query.limit) parts.push("limit=" + this.query.limit);
 			if (this.query.skip) parts.push("skip=" + this.query.skip);
 			if (this.query.sort) parts.push("sort=" + encodeURIComponent(JSON.stringify(this.query.sort)));
-			
+
 			return request(this.dm.hoist._configs, { url: this.dm.url + "?" + parts.join('&'), bucket: this.dm.bucket }, success, error, context);
 		},
-		
+
 		where: function (key, value) {
 			if (typeof key === "string") {
 				if (value === u) {
@@ -374,20 +374,20 @@
 					return this._where(key, value);
 				}
 			}
-			
+
 			var query = extend({}, this.query);
 			query.q = query.q ? extend({}, query.q) : {};
 			extend(query.q, key);
 			return new QueryManager(this.dm, query);
 		},
-		
+
 		_where: function (key, value) {
 			var query = extend({}, this.query);
 			query.q = query.q ? extend({}, query.q) : {};
 			query.q[key] = value;
 			return new QueryManager(this.dm, query);
 		},
-		
+
 		_whereAnd: function (key, op, value) {
 			var query = extend({}, this.query);
 			query.q = query.q ? extend({}, query.q) : {};
@@ -395,22 +395,22 @@
 			query.q[key][op] = value;
 			return new QueryManager(this.dm, query);
 		},
-		
+
 		limit: function (limit) {
 			var query = extend({}, this.query);
 			query.limit = limit;
 			return new QueryManager(this.dm, query);
 		},
-		
+
 		skip: function (skip) {
 			var query = extend({}, this.query);
 			query.skip = skip;
 			return new QueryManager(this.dm, query);
 		},
-		
+
 		_sort: function (append, args) {
-			var sort = append && this.query.sort && this.query.sort.slice() || [];			
-		
+			var sort = append && this.query.sort && this.query.sort.slice() || [];
+
 			for (var i = 0; i < args.length; i++) {
 				if (args[i].slice(-4).toLowerCase() == " asc") {
 					sort.push([ args[i].slice(0, -4), 1 ]);
@@ -420,32 +420,32 @@
 					sort.push([ args[i], 1 ]);
 				}
 			}
-			
+
 			var query = extend({}, this.query);
 			query.sort = sort;
 			return new QueryManager(this.dm, query);
 		},
-		
+
 		sortBy: function () {
 			return this._sort(false, arguments);
 		},
-		
+
 		thenBy: function () {
 			return this._sort(true, arguments);
 		},
-		
+
 		use: function (bucket) {
 			return new QueryManager(this.dm.use(bucket), this.query);
 		}
 	});
-	
+
 	// partial query manager, proxying mongo queries since 2014
-	
+
 	function PartialQueryManager(qm, key) {
 		this.qm = qm;
 		this.key = key;
 	}
-	
+
 	extendAliases(PartialQueryManager.prototype, {
 		"eq is equals":
 			function (value) { this.qm = this.qm._where(this.key, value); return this; },
@@ -466,7 +466,7 @@
 		"exists":
 			function () { this.qm = this.qm._whereAnd(this.key, "$exists", true); return this; }
 	});
-	
+
 	extend(PartialQueryManager.prototype, {
 		where: function (key, value) { return this.qm.where(key, value); },
 		limit: function (limit) { return this.qm.limit(limit); },
@@ -475,7 +475,7 @@
 		sortBy: function () { return this.qm._sort(false, arguments); },
 		thenBy: function () { return this.qm._sort(true, arguments); },
 		use: function (bucket) { return this.qm.use(bucket); },
-		
+
 		get: function (success, error, context) {
 			return this.qm.get(success, error, context);
 		}
@@ -598,7 +598,7 @@
 			}
 
 			advance();
-			
+
 			return promise;
 		}
 	});
@@ -632,7 +632,7 @@
 			return this.hoist.bucket.set(this.bucket, success, error, context);
 		}
 	};
-	
+
 	var hoistMethods = {
 		apiKey: function (v) {
 			return this.config("apikey", v);
@@ -666,7 +666,7 @@
 					}
 				} else if (type === "function" || type === "undefined") {
 					var hoist = this;
-				
+
 					return request(null, {
 						url: "/settings",
 						process: function (settings) {
@@ -682,7 +682,7 @@
 
 		status: function (success, error, context) {
 			var hoist = this;
-			
+
 			if (typeof error !== "function") {
 			if (!context) context = error;
 				error = null;
@@ -703,7 +703,7 @@
 
 		signup: function (member, success, error, context) {
 			var hoist = this;
-			
+
 			if (typeof member === "object") {
 				return request(this._configs, {
 					url: "auth.hoi.io/user",
@@ -721,7 +721,7 @@
 
 		login: function (member, success, error, context) {
 			var hoist = this;
-			
+
 			if (typeof member === "object") {
 				return request(this._configs, {
 					url: "auth.hoi.io/login",
@@ -776,7 +776,7 @@
 				data = id.data;
 				id = id.id;
 			}
-			
+
 			if (typeof data === "object") {
 				return request(this._configs, { url: "notify.hoi.io/notification/" + id, data: data }, success, error, context);
 			} else {
@@ -833,6 +833,11 @@
 
 			return manager;
 		},
+
+		connector: function (type, token) {
+			return new ConnectorManager(this, type, token);
+		},
+
 		clone: function () {
 			var hoist = extend(makeHoist(), {
 				_configs: extend({}, this._configs),
@@ -912,7 +917,7 @@
 					if (hoist._bucket && hoist._bucket.key == bucket.key) {
 						hoist._bucket = bucket;
 					}
-					
+
 					return bucket;
 				}
 			}, success, error, context);
@@ -950,7 +955,7 @@
 				return request(hoist._configs, { url: "auth.hoi.io/invite", data: data }, success, error, context);
 			} else {
 				// switch bucket so you can invite the user into the right one -- this is suboptimal but works for now
-				
+
 				return this.set(key).then(function () {
 					return request(hoist._configs, { url: "auth.hoi.io/invite", data: data }, success, context);
 				}, function (message) {
@@ -959,6 +964,63 @@
 			}
 		}
 	};
+
+	function ConnectorManager(hoist, type, token) {
+		this.hoist = hoist;
+		this.url = "proxy.hoi.io/" + type;
+		this.token = token;
+	}
+
+	extend(ConnectorManager.prototype, {
+
+		authorize: function (options, context) {
+
+			options = extend({
+				url: window.location.href,
+				error: function() { },
+				success: function() { },
+				redirect: function(redirect_url) { window.location = res.redirect; }
+			}, options);
+
+			options.success = function(res) {
+				if(res.redirect) {
+					options.redirect && options.redirect.apply(this, [res.redirect]);
+					return;
+				}
+				options.success && options.success.apply(this, arguments);
+			};
+
+			return request(this.hoist._configs, { url: this.url + "/connect", data: { return_url: options.url } }, options.success, options.error, context);
+
+		},
+
+		get: function (path, success, error, context) {
+			if (path[0] !== '/') path = '/' + path;
+			return request(this.hoist._configs, { url: this.url + path, token: this.token }, success, error, context);
+		},
+
+		post: function (path, data, success, error, context) {
+			if (path[0] !== '/') path = '/' + path;
+			return request(this.hoist._configs, { url: this.url + path, data: data, token: this.token }, success, error, context);
+		},
+
+		put: function (path, data, success, error, context) {
+			if (path[0] !== '/') path = '/' + path;
+			return request(this.hoist._configs, { url: this.url + path, data: data, method: "PUT", token: this.token }, success, error, context);
+		},
+
+		remove: function (path, data, success, error, context) {
+			if (typeof data === "function") {
+				context = error;
+				error = success;
+				success = data;
+				data = null;
+			}
+
+			if (path[0] !== '/') path = '/' + path;
+			return request(this.hoist._configs, { url: this.url + path, data: data, method: "DELETE", token: this.token }, success, error, context);
+		}
+	});
 
 	function makeHoist() {
 		var hoist = extend(function (type, bucket) {
