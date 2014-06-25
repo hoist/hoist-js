@@ -969,7 +969,7 @@
 				url: window.location.href,
 				error: function() { },
 				success: function() { },
-				redirect: function(redirect_url) { window.location = res.redirect; }
+				redirect: function(redirect_url) { window.location = redirect_url; }
 			}, options);
 
 			options.success = function(res) {
