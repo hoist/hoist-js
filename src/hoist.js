@@ -223,6 +223,10 @@
 			xhr.setRequestHeader("x-bucket-key", opts.bucket);
 		}
 
+		if (opts.token) {
+			xhr.setRequestHeader("OAuth", "Token " + opts.token);
+		}
+
 		xhr.withCredentials = true;
 
 		var promise = new Promise();
@@ -965,6 +969,8 @@
 
 		authorize: function (options, context) {
 
+			var self = this;
+
 			options = extend({
 				url: window.location.href,
 				error: function() { },
@@ -972,15 +978,16 @@
 				redirect: function(redirect_url) { window.location = redirect_url; }
 			}, options);
 
-			options.success = function(res) {
+			return request(this.hoist._configs, { url: this.url + "/connect", data: { return_url: options.url } }, function(res) {
+				if(res.token) {
+					self.token = res.token;
+				}
 				if(res.redirect) {
 					options.redirect && options.redirect.apply(this, [res.redirect]);
 					return;
 				}
 				options.success && options.success.apply(this, arguments);
-			};
-
-			return request(this.hoist._configs, { url: this.url + "/connect", data: { return_url: options.url } }, options.success, options.error, context);
+			}, options.error, context);
 
 		},
 
