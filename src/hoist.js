@@ -991,6 +991,13 @@
 
 		},
 
+	    disconnect: function (success, error, context) {
+		return request(this.hoist_configs, { url: this.url + "/disconnect" }, success, error, context );
+	    },
+	    removeFromUser: function(success, error, context) {
+		return request(this.hoist_configs, { url: this.url + "/removeFromUser" }, success, error, context );
+	    },
+
 		get: function (path, success, error, context) {
 			if (path[0] !== '/') path = '/' + path;
 			return request(this.hoist._configs, { url: this.url + path, token: this.token }, success, error, context);
