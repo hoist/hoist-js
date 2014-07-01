@@ -1,6 +1,6 @@
 {
   "name": "hoist",
-  "version": "0.0.1-pre",
+  "version": "0.0.2-pre",
   "description": "Client Side Library for Hoist (hoistapps.com)",
   "homepage": "http://hoistapps.com",
   "scripts": {
@@ -22,6 +22,8 @@
     "url": "https://github.com/hoist/hoist-js/issues"
   },
   "dependencies": {
+  },
+  "devDependencies": {
     "grunt": "~0.4.1",
     "grunt-compare-size": "~0.4.0-rc.3",
     "grunt-git-authors": "~1.2.0",
@@ -37,9 +39,7 @@
     "grunt-contrib-connect": "~0.3.0",
     "bower": "~1.2.6",
     "grunt-bower-task": "~0.3.2",
-    "grunt-concat-sourcemap": "~0.3.0"
-  },
-  "devDependencies": {
+    "grunt-concat-sourcemap": "~0.3.0",
     "mocha-phantomjs": "~3.1.1",
     "phantomjs": "~1.9.1-9",
     "mocha": "~1.12.0",
