@@ -1,12 +1,10 @@
 require.config({
   baseUrl: '/src',
   paths: {
-    'chai': '../lib/chai/chai',
-    'heir': '../lib/heir/heir',
-    'EventEmitter':'../lib/eventEmitter/EventEmitter',
-    'superagent': '../lib/superagent/superagent',
-    'sinon':'../util/sinon',
-    'lodash':'../util/lodash'
+    'chai': '../bower_components/chai/chai',
+    'sinon':'../bower_components/sinonjs/sinon',
+    'lodash':'../bower_components/lodash/dist/lodash',
+    'chai-as-promised':'../bower_components/chai-as-promised/lib/chai-as-promised'
   },
   shim:{
     sinon:{
@@ -16,11 +14,14 @@ require.config({
 });
 
 require([
+	'chai',
+	'chai-as-promised',
   // FILE(S) BEING TESTED
   '../tests/data/model_api_specs',
   '../tests/auth/auth_api_specs',
   '../tests/notifications/notifications_api_specs'
-], function() {
+], function(chai,chaiAsPromised) {
+	chai.use(chaiAsPromised);
   // INITIALIZE THE RUN
   if (window.mochaPhantomJS) {
     mochaPhantomJS.run();

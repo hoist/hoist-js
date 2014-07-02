@@ -1,36 +1,19 @@
-define(['Hoist', 'chai', 'superagent', 'sinon'], function(Hoist, chai, superagent, sinon) {
+var testSuite= function(Hoist, chai, sinon) {
 	'use strict';
 	var should = chai.should();
-	describe('Notification api', function() {
-		it('should expose notifications on the Hoist root', function() {
-			should.exist(Hoist.notifications);
-		});
-		describe('creating a new email before setting api key', function() {
-			var _exception;
-			before(function() {
-				Hoist.config.ApiKey = null;
-				try {
-					var email = new Hoist.notifications.Email();
-				} catch (e) {
-					_exception = e;
-				}
-			});
-			it('should throw an exception', function() {
-				should.exist(_exception);
-			});
-			it('should throw an API Key Not Set Exception', function() {
-				_exception.should.be.instanceOf(Hoist.exceptions.ApiKeyNotSet);
-			});
-		});
-		describe('creating an email', function () {
-			before(function() {
-				Hoist.config.ApiKey = null;
-				var email = new Hoist.notifications.Email('welcome_email',{
-					field:'value'	
-				});
-				email.send();
-			});
-		});
-	});
+	describe("Hoist SDK: Notifications", function() {
 
-});
+	});
+};
+
+if (typeof define === "function" && define.amd) {
+	define(['Hoist', 'chai', 'sinon'], testSuite);
+} else if (typeof window === "object" && typeof window.document === "object") {
+	testSuit(window.Hoist, window.chai, window.superagent, window.sinon);
+} else if (typeof module === "object" && typeof module.exports === "object") {
+	testSuite(
+		require('../../src/hoist'),
+		require('chai'),
+		require('sinon')
+	);
+}

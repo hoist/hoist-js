@@ -14,15 +14,13 @@
     "test",
     "tests"
   ],
-  "dependencies": {
-
-  },
+  "dependencies": {},
   "devDependencies": {
     "requirejs": "~2.1.8",
-    "superagent": "~0.15.4",
-    "eventEmitter": "~4.2.3",
-    "heir": "~1.0.1",
-    "chai": "~1.7.2",
-    "mocha": "~1.12.0"
+    "chai": "~1.9.1",
+    "mocha": "~1.20.1",
+    "chai-as-promised": "~4.1.1",
+    "lodash": "~2.4.1",
+    "sinonjs": "~1.10.2"
   }
 }

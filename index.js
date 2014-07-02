@@ -1,1 +1,6 @@
-module.exports = require('./src/hoist');
+module.exports = function(XHR) {
+		XHR = XHR || require('xmlhttprequest').XMLHttpRequest;
+		require('./src/hoist')(function(){
+			return new XHR();
+		});
+};

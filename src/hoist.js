@@ -1,5 +1,8 @@
 /*jshint loopfunc: true */
-(function() {
+var h = function(XHR) {
+	XHR = XHR || function(){
+		return new XMLHttpRequest();
+	};
 	var toString = Object.prototype.toString,
 		splice = Array.prototype.splice,
 		u;
@@ -19,6 +22,7 @@
 	}
 
 	function get(obj, key, nothing) {
+
 		if (key.indexOf('.') == -1) {
 			return obj[key];
 		} else {
@@ -164,6 +168,7 @@
 	// ajax helper
 
 	function request(configs, opts, success, error, context) {
+
 		var method, contentType, responseType;
 
 		if ("data" in opts) {
@@ -191,7 +196,7 @@
 			return asyncError(error, context, "API key not set", null);
 		}
 
-		var xhr = new XMLHttpRequest();
+		var xhr = XHR();
 
 		xhr.open(method, configs ? configs.protocol + opts.url : opts.url);
 
@@ -270,6 +275,7 @@
 
 	extend(DataManager.prototype, {
 		get: function(id, success, error, context) {
+
 			if (typeof id === "function") {
 				context = error;
 				error = success;
@@ -278,6 +284,7 @@
 			}
 
 			if (id) {
+
 				return request(this.hoist._configs, {
 					url: this.url + "/" + id,
 					bucket: this.bucket
@@ -1096,6 +1103,7 @@
 		},
 
 		get: function(path, success, error, context) {
+
 			if (path[0] !== '/') path = '/' + path;
 			return request(this.hoist._configs, {
 				url: this.url + path,
@@ -1180,14 +1188,14 @@
 	});
 
 	// throw Hoist at something it will stick to
+	return Hoist;
+};
 
-	if (typeof define === "function" && define.amd) {
-		define("Hoist", [], function() {
-			return Hoist;
-		});
-	} else if (typeof window === "object" && typeof window.document === "object") {
-		window.Hoist = Hoist;
-	} else if (typeof module === "object" && typeof module.exports === "object") {
-		module.exports = Hoist;
-	}
-})();
+
+if (typeof define === "function" && define.amd) {
+	define("Hoist", [''], h);
+} else if (typeof window === "object" && typeof window.document === "object") {
+	window.Hoist = h();
+} else if (typeof module === "object" && typeof module.exports === "object") {
+	module.exports = h;
+}
