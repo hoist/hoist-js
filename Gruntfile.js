@@ -17,7 +17,8 @@ module.exports = function(grunt) {
 				options: {
 					reporter: grunt.option('reporter') || 'spec',
 					urls: [
-						'http://localhost:8000/testrunner.html'
+						'http://localhost:8000/testrunner.html',
+						'http://localhost:8000/testrunner-vanilla.html'
 					]
 				}
 			}
@@ -35,6 +36,14 @@ module.exports = function(grunt) {
 					base: '.',
 					keepalive: true
 				}
+			}
+		},
+		mochaTest: {
+			test: {
+				options: {
+					reporter: 'spec'
+				},
+				src: ['tests/test.node.js']
 			}
 		},
 		jshint: {
@@ -61,21 +70,13 @@ module.exports = function(grunt) {
 				//just run 'grunt bower:install' and you'll see files from your Bower packages in lib directory
 			}
 		},
-		requirejs:  grunt.file.readJSON('./build/build.settings.js')
+		requirejs: grunt.file.readJSON('./build/build.settings.js')
 	});
 
-	grunt.loadNpmTasks('grunt-contrib-uglify');
-	grunt.loadNpmTasks('grunt-contrib-watch');
-	grunt.loadNpmTasks('grunt-contrib-jshint');
-	grunt.loadNpmTasks('grunt-bower-task');
-	grunt.loadNpmTasks('grunt-mocha-phantomjs');
-	grunt.loadNpmTasks('grunt-contrib-connect');
-	grunt.loadNpmTasks('grunt-nodemon');
-	grunt.loadNpmTasks('grunt-shell');
-	grunt.loadNpmTasks('grunt-contrib-requirejs');
+	require('load-grunt-tasks')(grunt);
 
 
-	grunt.registerTask("test", ['jshint', 'connect:server', 'mocha_phantomjs']);
+	grunt.registerTask("test", ['jshint', 'connect:server', 'mocha_phantomjs','mochaTest']);
 	grunt.registerTask("default", ['jshint']);
 
 };

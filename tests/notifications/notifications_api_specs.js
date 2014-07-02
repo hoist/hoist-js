@@ -12,7 +12,7 @@ if (typeof define === "function" && define.amd) {
 	testSuit(window.Hoist, window.chai, window.superagent, window.sinon);
 } else if (typeof module === "object" && typeof module.exports === "object") {
 	testSuite(
-		require('../../src/hoist'),
+		require('../../')(),
 		require('chai'),
 		require('sinon')
 	);
