@@ -4,11 +4,27 @@ module.exports = function (grunt) {
   var port = 8981;
 
   grunt.initConfig({
-    nodemon: {
-      dev: {
+    browserify: {
+      dist: {
+        files: {
+          'build/hoist.min.pre.js': ['src/hoist.js']
+        }
+      },
+      debug: {
+        files: {
+          'build/hoist.js': ['src/hoist.js']
+        },
         options: {
-          file: 'util/web-server.js',
-          watchedFolders: ['src']
+          bundleOptions: {
+            debug: true
+          }
+        }
+      }
+    },
+    uglify: {
+      dist: {
+        files: {
+          'build/hoist.min.js': ['build/hoist.min.pre.js']
         }
       }
     },
@@ -69,14 +85,13 @@ module.exports = function (grunt) {
       install: {
         //just run 'grunt bower:install' and you'll see files from your Bower packages in lib directory
       }
-    },
-    requirejs: grunt.file.readJSON('./build/build.settings.js')
+    }
   });
 
   require('load-grunt-tasks')(grunt);
 
 
-  grunt.registerTask("test", ['jshint', 'connect:server', 'mocha_phantomjs', 'mochaTest']);
+  grunt.registerTask("test", ['jshint', 'browserify:debug', 'browserify:dist', 'uglify:dist', 'connect:server', 'mocha_phantomjs', 'mochaTest']);
   grunt.registerTask("default", ['jshint']);
 
 };

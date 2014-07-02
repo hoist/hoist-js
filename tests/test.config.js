@@ -1,10 +1,11 @@
 require.config({
-  baseUrl: '/src',
+  baseUrl: '/build',
   paths: {
     'chai': '../bower_components/chai/chai',
     'sinon': '../bower_components/sinonjs/sinon',
     'lodash': '../bower_components/lodash/dist/lodash',
-    'chai-as-promised': '../bower_components/chai-as-promised/lib/chai-as-promised'
+    'chai-as-promised': '../bower_components/chai-as-promised/lib/chai-as-promised',
+    'superagent': '../bower_components/superagent/superagent'
   },
   shim: {
     sinon: {
@@ -16,6 +17,7 @@ require.config({
 require([
   'chai',
   'chai-as-promised',
+  'superagent',
   // FILE(S) BEING TESTED
   '../tests/data/model_api_specs',
   '../tests/auth/auth_api_specs',

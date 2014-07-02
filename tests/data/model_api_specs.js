@@ -98,7 +98,7 @@ if (typeof define === "function" && define.amd) {
   testSuite(window.Hoist, window.chai, window.sinon);
 } else if (typeof module === "object" && typeof module.exports === "object") {
   testSuite(
-    require('../../')(),
+    require('../../'),
     require('chai'),
     require('sinon')
   );
