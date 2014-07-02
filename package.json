@@ -1,6 +1,6 @@
 {
   "name": "hoist-js",
-  "version": "0.0.3-pre",
+  "version": "0.0.4-pre",
   "description": "Client Side Library for Hoist (hoistapps.com)",
   "homepage": "http://hoistapps.com",
   "scripts": {
@@ -12,12 +12,10 @@
     "url": "https://github.com/hoist/hoist-js"
   },
   "author": "Hoist Apps Ltd",
-  "license": [
-    {
-      "type": "MIT",
-      "url": "https://github.com/hoist/hoist-js/blob/master/LICENSE"
-    }
-  ],
+  "license": [{
+    "type": "MIT",
+    "url": "https://github.com/hoist/hoist-js/blob/master/LICENSE"
+  }],
   "bugs": {
     "url": "https://github.com/hoist/hoist-js/issues"
   },
