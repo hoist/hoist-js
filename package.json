@@ -1,11 +1,11 @@
 {
   "name": "hoist-js",
-  "version": "0.0.4-pre",
+  "version": "0.0.5-pre",
   "description": "Client Side Library for Hoist (hoistapps.com)",
   "homepage": "http://hoistapps.com",
   "scripts": {
     "test": "grunt test",
-    "install": "bower install"
+    "bower": "bower install"
   },
   "repository": {
     "type": "git",
