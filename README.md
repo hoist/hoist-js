@@ -1,16 +1,18 @@
 #Hoist Javascript Library
 
+[ ![Codeship Status for hoist/hoist-js](https://www.codeship.io/projects/895113a0-e485-0131-80ca-6ab1ceb1153c/status)](https://www.codeship.io/projects/25615)
+
 ##Setting the api key
 
 The library must be given the api key for your application before any other actions are performed. This can be done in either of the following ways:
 
 	Hoist.apiKey(apiKey);
 	Hoist.config("apiKey", apiKey);
-	
+
 When your app is hosted on Hoist (as even-cushion.app.hoi.io, say), it has an endpoint /settings which knows the api key and the current environment. To read from the endpoint and set the Hoist config automatically, you can simply call
 
 	Hoist.config(…)
-	
+
 providing a callback as discussed below. You may find it useful to create a json file called settings in your development environment to mimic this behaviour.
 
 You might want to be able to talk to multiple Hoist applications. In this case, you should call `Hoist.clone()` and set the api key for the new copy:
@@ -147,7 +149,7 @@ A shorthand can be used if you have no need for the "data manager" pattern:
 	Hoist.post(modelType, data, …)
 	Hoist.clear(modelType, …)
 	Hoist.remove(modelType, id, …)
-	
+
 ### Queries
 
 The query represented by a data manager can be made more specific by using LINQ-style method chaining to add
@@ -156,7 +158,7 @@ where clauses, sorting and paging:
 	Hoist("article").limit(10).skip(50).get(…) // return at most 10 articles and skip the first 50
 	Hoist("person").sortBy("LastName", "FirstName asc").thenBy("DateOfBirth desc").get(…) // sort by properties
 	Hoist("person").where("LastName").equals("Morrison").get(…) // where clauses
-	
+
 The predicates supported in where clauses (like `equals` in the last example above) are as follows:
 
 - `equals`, `is` or `eq`: test equality
@@ -229,22 +231,22 @@ You can simply call `Hoist.bucket()` to get it. (Note that calling `Hoist.bucket
 Finally, to invite a user to the current bucket, do:
 
 	Hoist.bucket.invite({ "email": "boris@daspem.com" }, …)
-	
+
 Many times it doesn't make sense to rely on state on the server to remember which bucket you're in. To get a
 Hoist data manager whose calls are always scoped to a given bucket, use the `use()` method as in the following:
 
 	var bucketHoist = Hoist.use("my-bucket-key");
-	
+
 	bucketHoist.get(…); // works as above for Hoist.get
 	bucketHoist.post(…);
 	bucketHoist.clear(…);
 	bucketHoist.remove(…);
-	
+
 	bucketHoist.meta(data, …); // post metadata against this bucket
 	bucketHoist.enter(…);
-	
+
 	var modelTypeManager = Hoist("model-type").use("bucket-key"); // or bucketHoist("model-type");
-	
+
 	modelTypeManager.get(…); // work as above for data managers
 	modelTypeManager.post(…);
 	modelTypeManager.clear(…);
