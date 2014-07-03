@@ -4,11 +4,27 @@ module.exports = function (grunt) {
   var port = 8981;
 
   grunt.initConfig({
-    nodemon: {
-      dev: {
+    browserify: {
+      dist: {
+        files: {
+          'build/hoist.min.pre.js': ['src/hoist.js']
+        }
+      },
+      debug: {
+        files: {
+          'build/hoist.js': ['src/hoist.js']
+        },
         options: {
-          file: 'util/web-server.js',
-          watchedFolders: ['src']
+          bundleOptions: {
+            debug: true
+          }
+        }
+      }
+    },
+    uglify: {
+      dist: {
+        files: {
+          'build/hoist.min.js': ['build/hoist.min.pre.js']
         }
       }
     },
@@ -19,7 +35,10 @@ module.exports = function (grunt) {
           urls: [
             'http://localhost:8000/testrunner.html',
             'http://localhost:8000/testrunner-vanilla.html'
-          ]
+          ],
+          setting: {
+            "webSecurityEnabled": false
+          }
         }
       }
     },
@@ -30,11 +49,10 @@ module.exports = function (grunt) {
           base: '.',
         }
       },
-      test: {
+      develop: {
         options: {
           port: 8001,
-          base: '.',
-          keepalive: true
+          base: '.'
         }
       }
     },
@@ -61,22 +79,26 @@ module.exports = function (grunt) {
     },
     watch: {
       js: {
-        files: ['**/*.js', '!**/nodemodules/**'],
-        tasks: ['jshint', 'connect:server', 'mocha_phantomjs']
+        files: ['src/*.js'],
+        tasks: ['jshint', 'browserify:debug', 'mochaTest']
+      },
+      tests: {
+        files: ['tests/*/*.js'],
+        tasks: ['jshint', 'mochaTest']
       }
     },
     bower: {
       install: {
         //just run 'grunt bower:install' and you'll see files from your Bower packages in lib directory
       }
-    },
-    requirejs: grunt.file.readJSON('./build/build.settings.js')
+    }
   });
 
   require('load-grunt-tasks')(grunt);
 
 
-  grunt.registerTask("test", ['jshint', 'connect:server', 'mocha_phantomjs', 'mochaTest']);
+  grunt.registerTask("test", ['jshint', 'browserify:debug', 'browserify:dist', 'uglify:dist', 'connect:server', 'mocha_phantomjs', 'mochaTest']);
   grunt.registerTask("default", ['jshint']);
+  grunt.registerTask("develop", ['jshint', 'browserify:debug', 'browserify:dist', 'uglify:dist', 'mochaTest', 'connect:develop', 'watch']);
 
 };

@@ -1,0 +1,38 @@
+<html>
+  <head>
+    <meta charset="utf-8">
+    <title>Run tests without require.js</title>
+    <link rel="stylesheet" href="bower_components/mocha/mocha.css" />
+  </head>
+  <body>
+    <div id="mocha"></div>
+
+    <script type="text/javascript" src="bower_components/mocha/mocha.js"></script>
+    <script src="/bower_components/chai/chai.js"></script>
+    <script src="/bower_components/chai-as-promised/lib/chai-as-promised.js"></script>
+    <script src="/bower_components/sinonjs/sinon.js"></script>
+    <script type="text/javascript">
+      // MOCHA SETUP
+      chai.use(chaiAsPromised);
+      chai.Should();
+      mocha.setup('bdd');
+    </script>
+    <script src="/build/hoist.js"></script>
+    <script src="/tests/blob.shim.js"></script>
+
+    <!--tests-->
+    <script src="/tests/auth/auth_api_specs.js"></script>
+    <script src="/tests/data/data_api_specs.js"></script>
+    <script src="/tests/file/file_api_specs.js"></script>
+    <script src="/tests/notify/notify_api_specs.js"></script>
+    <script type="text/javascript">
+        mocha.checkLeaks();
+        mocha.globals(['Hoist']);
+        if (window.mochaPhantomJS) {
+          mochaPhantomJS.run();
+        } else {
+          mocha.run();
+        }
+    </script>
+  </body>
+</html>
