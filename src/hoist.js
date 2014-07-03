@@ -219,18 +219,22 @@ var agent = require('superagent');
     var promise = new Promise();
 
     var callback = function (err, res) {
+
       if (err) {
+        console.log(err);
         throw err;
       }
       if (res.status >= 200 && res.status < 400) {
-        var response;
-        if (res.body) {
+        var response = res;
+        if (res.headers['content-type'] === 'application/json') {
           response = res.body;
-        } else if (res.text) {
-          response = new Blob([response]);
+        } else if (res.text && typeof Blob !== 'undefined') {
+          response = new Blob([res.text]);
         }
 
-        if (opts.process) response = opts.process(response);
+        if (opts.process) {
+          response = opts.process(response);
+        }
 
         if (success) {
           success.call(context, response, res.xhr);
@@ -851,7 +855,9 @@ var agent = require('superagent');
     },
 
     file: function (key, file, success, error, context) {
-      if (file.jquery) file = file[0];
+      if (file && file.jquery) {
+        file = file[0];
+      }
 
       var type = classOf(file),
         data;
@@ -877,7 +883,8 @@ var agent = require('superagent');
           url: "file.hoi.io/" + key,
           responseType: "blob"
         }, success, error, context);
-      } else if (type === "Undefined") {
+        //undefined is DOMWindow in phantom for some reason
+      } else if (type === "Undefined" || type === "DOMWindow") {
         return request(this._configs, {
           url: "file.hoi.io/" + key,
           responseType: "blob"

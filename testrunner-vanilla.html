@@ -18,8 +18,13 @@
       mocha.setup('bdd');
     </script>
     <script src="/build/hoist.js"></script>
+    <script src="/tests/blob.shim.js"></script>
+
     <!--tests-->
-    <script src="/tests/data/model_api_specs.js"></script>
+    <script src="/tests/auth/auth_api_specs.js"></script>
+    <script src="/tests/data/data_api_specs.js"></script>
+    <script src="/tests/file/file_api_specs.js"></script>
+    <script src="/tests/notify/notify_api_specs.js"></script>
     <script type="text/javascript">
         mocha.checkLeaks();
         mocha.globals(['Hoist']);

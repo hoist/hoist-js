@@ -35,7 +35,10 @@ module.exports = function (grunt) {
           urls: [
             'http://localhost:8000/testrunner.html',
             'http://localhost:8000/testrunner-vanilla.html'
-          ]
+          ],
+          setting: {
+            "webSecurityEnabled": false
+          }
         }
       }
     },
@@ -46,11 +49,10 @@ module.exports = function (grunt) {
           base: '.',
         }
       },
-      test: {
+      develop: {
         options: {
           port: 8001,
-          base: '.',
-          keepalive: true
+          base: '.'
         }
       }
     },
@@ -77,8 +79,12 @@ module.exports = function (grunt) {
     },
     watch: {
       js: {
-        files: ['**/*.js', '!**/nodemodules/**'],
-        tasks: ['jshint', 'connect:server', 'mocha_phantomjs']
+        files: ['src/*.js'],
+        tasks: ['jshint', 'browserify:debug', 'mochaTest']
+      },
+      tests: {
+        files: ['tests/*/*.js'],
+        tasks: ['jshint', 'mochaTest']
       }
     },
     bower: {
@@ -93,5 +99,6 @@ module.exports = function (grunt) {
 
   grunt.registerTask("test", ['jshint', 'browserify:debug', 'browserify:dist', 'uglify:dist', 'connect:server', 'mocha_phantomjs', 'mochaTest']);
   grunt.registerTask("default", ['jshint']);
+  grunt.registerTask("develop", ['jshint', 'browserify:debug', 'browserify:dist', 'uglify:dist', 'mochaTest', 'connect:develop', 'watch']);
 
 };

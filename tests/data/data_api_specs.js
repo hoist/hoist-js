@@ -11,6 +11,9 @@ var testSuite = function (Hoist, chai, sinon) {
         server.autoRespondAfter = 2;
       } else if (require) {
         server = require('nock');
+        if (!server.isActive()) {
+          server.activate();
+        }
         server.disableNetConnect();
       }
     });
@@ -84,6 +87,7 @@ var testSuite = function (Hoist, chai, sinon) {
       if (sinon.fakeServer) {
         server.restore();
       } else if (require) {
+        console.log('enabling net connect');
         server.enableNetConnect();
       }
     });
