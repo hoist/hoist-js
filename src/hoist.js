@@ -173,11 +173,12 @@ var agent = require('superagent');
 
     if ("data" in opts) {
       var type = classOf(opts.data);
-
+      console.log(type);
       if (type === "String") {
         contentType = "application/json";
       } else if (type === "FormData") {
         method = opts.method || "POST";
+        //contentType = "application/x-www-form-urlencoded";
       } else {
         method = opts.method || "POST";
         contentType = "application/json";
@@ -195,8 +196,11 @@ var agent = require('superagent');
     if (configs && !configs.apikey) {
       return asyncError(error, context, "API key not set", null);
     }
-
-    var req = agent[method.toLowerCase()](configs ? configs.protocol + opts.url : opts.url);
+    var func = method.toLowerCase();
+    if (func === 'delete') {
+      func = 'del';
+    }
+    var req = agent[func](configs ? configs.protocol + opts.url : opts.url);
     if (contentType) {
       req = req.set("Content-Type", contentType);
     }
@@ -226,7 +230,7 @@ var agent = require('superagent');
       }
       if (res.status >= 200 && res.status < 400) {
         var response = res;
-        if (res.headers['content-type'] === 'application/json') {
+        if (res.type === "application/json") {
           response = res.body;
         } else if (res.text && typeof Blob !== 'undefined') {
           response = new Blob([res.text]);
@@ -252,7 +256,11 @@ var agent = require('superagent');
       }
     };
     if (opts.data) {
-      req.send(opts.data);
+      if (classOf(opts.data) === "FormData") {
+        req._formData = opts.data;
+      } else {
+        req.send(opts.data);
+      }
     }
     req.end(callback);
 
