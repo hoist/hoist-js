@@ -1,6 +1,7 @@
 require.config({
   baseUrl: '/build',
   paths: {
+    'Hoist': 'hoist',
     'chai': '../bower_components/chai/chai',
     'sinon': '../bower_components/sinonjs/sinon',
     'lodash': '../bower_components/lodash/dist/lodash',
