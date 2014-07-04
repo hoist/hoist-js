@@ -1462,6 +1462,7 @@ var agent = require('superagent');
     if (req.withCredentials) {
       req = req.withCredentials();
     }
+    responseType = opts.responseType || "json";
 
     var promise = new Promise();
 
@@ -1473,9 +1474,13 @@ var agent = require('superagent');
       }
       if (res.status >= 200 && res.status < 400) {
         var response = res;
-        if (res.type === "application/json") {
-          response = res.body;
-        } else if (res.text && typeof Blob !== 'undefined') {
+        if ((res.body || res.text) && responseType === 'json') {
+          if (res.body) {
+            response = res.body;
+          } else {
+            response = JSON.parse(res.text);
+          }
+        } else if (responseType === 'blob' && res.text && typeof Blob !== 'undefined') {
           response = new Blob([res.text]);
         }
 
