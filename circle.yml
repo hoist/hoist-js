@@ -6,7 +6,7 @@ machine:
 dependencies:
   post:
     - npm install bower -g
-    - npm bower
+    - bower install
 general:
   artifacts:
     - coverage-out/*.html
