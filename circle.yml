@@ -1,0 +1,10 @@
+machine:
+  ruby:
+    version: 2.1.2
+  node:
+    version: v0.10.28
+general:
+  artifacts:
+    - coverage-out/*.html
+    - log/*.log
+    - npm-debug.log
