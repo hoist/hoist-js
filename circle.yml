@@ -3,6 +3,10 @@ machine:
     version: 2.1.2
   node:
     version: v0.10.28
+dependencies:
+  post:
+    - npm install bower -g
+    - npm bower
 general:
   artifacts:
     - coverage-out/*.html
