@@ -2,7 +2,7 @@ var agent = require('superagent');
 
 /*jshint loopfunc: true */
 (function () {
-
+  var Hoist;
   var toString = Object.prototype.toString,
     splice = Array.prototype.splice,
     u;
@@ -165,113 +165,6 @@ var agent = require('superagent');
     }
   });
 
-  // ajax helper
-
-  function request(configs, opts, success, error, context) {
-
-    var method, contentType, responseType;
-
-    if ("data" in opts) {
-      var type = classOf(opts.data);
-      console.log(type);
-      if (type === "String") {
-        contentType = "application/json";
-      } else if (type === "FormData") {
-        method = opts.method || "POST";
-        //contentType = "application/x-www-form-urlencoded";
-      } else {
-        method = opts.method || "POST";
-        contentType = "application/json";
-        opts.data = JSON.stringify(opts.data);
-      }
-    } else {
-      method = opts.method || "GET";
-    }
-
-    if (typeof error !== "function") {
-      if (!context) context = error;
-      error = null;
-    }
-
-    if (configs && !configs.apikey) {
-      return asyncError(error, context, "API key not set", null);
-    }
-    var func = method.toLowerCase();
-    if (func === 'delete') {
-      func = 'del';
-    }
-    var req = agent[func](configs ? configs.protocol + opts.url : opts.url);
-    if (contentType) {
-      req = req.set("Content-Type", contentType);
-    }
-
-    if (configs) {
-      req = req.set("Authorization", "Hoist " + configs.apikey);
-    }
-
-    if (opts.bucket) {
-      req = req.set("x-bucket-key", opts.bucket);
-    }
-
-    if (opts.token) {
-      req = req.set("OAuth", "Token " + opts.token);
-    }
-    if (req.withCredentials) {
-      req = req.withCredentials();
-    }
-    responseType = opts.responseType || "json";
-
-    var promise = new Promise();
-
-    var callback = function (err, res) {
-
-      if (err) {
-        console.log(err);
-        throw err;
-      }
-      if (res.status >= 200 && res.status < 400) {
-        var response = res;
-        if ((res.body || res.text) && responseType === 'json') {
-          if (res.body) {
-            response = res.body;
-          } else {
-            response = JSON.parse(res.text);
-          }
-        } else if (responseType === 'blob' && res.text && typeof Blob !== 'undefined') {
-          response = new Blob([res.text]);
-        }
-
-        if (opts.process) {
-          response = opts.process(response);
-        }
-
-        if (success) {
-          success.call(context, response, res.xhr);
-        }
-        promise.resolve(response);
-      } else {
-        var message = res.text;
-
-        if (opts.processError) message = opts.processError(message);
-
-        if (error) {
-          error.call(context, message, res.xhr);
-        }
-        promise.reject(message);
-      }
-    };
-    if (opts.data) {
-      if (classOf(opts.data) === "FormData") {
-        req._formData = opts.data;
-      } else {
-        req.send(opts.data);
-      }
-    }
-    req.end(callback);
-
-    return promise;
-  }
-
   // simple data manager
 
   function DataManager(hoist, type, bucket) {
@@ -293,12 +186,12 @@ var agent = require('superagent');
 
       if (id) {
 
-        return request(this.hoist._configs, {
+        return Hoist._request(this.hoist._configs, {
           url: this.url + "/" + id,
           bucket: this.bucket
         }, success, error, context);
       } else {
-        return request(this.hoist._configs, {
+        return Hoist._request(this.hoist._configs, {
           url: this.url,
           bucket: this.bucket
         }, success, error, context);
@@ -344,13 +237,13 @@ var agent = require('superagent');
       var singleton = classOf(data) === "Array" && data.length === 1;
 
       if (id) {
-        return request(this.hoist._configs, {
+        return Hoist._request(this.hoist._configs, {
           url: this.url + "/" + id,
           bucket: this.bucket,
           data: data
         }, success, error, context);
       } else {
-        return request(this.hoist._configs, {
+        return Hoist._request(this.hoist._configs, {
           url: this.url,
           bucket: this.bucket,
           data: data,
@@ -362,7 +255,7 @@ var agent = require('superagent');
     },
 
     clear: function (success, error, context) {
-      return request(this.hoist._configs, {
+      return Hoist._request(this.hoist._configs, {
         url: this.url,
         bucket: this.bucket,
         method: "DELETE"
@@ -374,7 +267,7 @@ var agent = require('superagent');
         return asyncError(error, context, "Cannot remove model with empty id", null);
       }
 
-      return request(this.hoist._configs, {
+      return Hoist._request(this.hoist._configs, {
         url: this.url + "/" + id,
         bucket: this.bucket,
         method: "DELETE"
@@ -402,7 +295,7 @@ var agent = require('superagent');
       if (this.query.skip) parts.push("skip=" + this.query.skip);
       if (this.query.sort) parts.push("sort=" + encodeURIComponent(JSON.stringify(this.query.sort)));
 
-      return request(this.dm.hoist._configs, {
+      return Hoist._request(this.dm.hoist._configs, {
         url: this.dm.url + "?" + parts.join('&'),
         bucket: this.dm.bucket
       }, success, error, context);
@@ -747,7 +640,7 @@ var agent = require('superagent');
         } else if (type === "function" || type === "undefined") {
           var hoist = this;
 
-          return request(null, {
+          return Hoist._request(null, {
             url: "/settings",
             process: function (settings) {
               hoist.config(settings);
@@ -768,7 +661,7 @@ var agent = require('superagent');
         error = null;
       }
 
-      return request(this._configs, {
+      return Hoist._request(this._configs, {
         url: "auth.hoi.io/status",
         process: function (resp) {
           hoist._user = resp;
@@ -785,7 +678,7 @@ var agent = require('superagent');
       var hoist = this;
 
       if (typeof member === "object") {
-        return request(this._configs, {
+        return Hoist._request(this._configs, {
           url: "auth.hoi.io/user",
           data: member,
           process: function (resp) {
@@ -803,7 +696,7 @@ var agent = require('superagent');
       var hoist = this;
 
       if (typeof member === "object") {
-        return request(this._configs, {
+        return Hoist._request(this._configs, {
           url: "auth.hoi.io/login",
           data: member,
           process: function (resp) {
@@ -820,7 +713,7 @@ var agent = require('superagent');
     logout: function (success, error, context) {
       var hoist = this;
 
-      return request(this._configs, {
+      return Hoist._request(this._configs, {
         url: "auth.hoi.io/logout",
         method: "POST",
         process: function (resp) {
@@ -834,7 +727,7 @@ var agent = require('superagent');
     accept: function (code, data, success, error, context) {
       var hoist = this;
 
-      return request(this._configs, {
+      return Hoist._request(this._configs, {
         url: "auth.hoi.io/invite/" + code + "/user",
         data: data,
         process: function (resp) {
@@ -858,7 +751,7 @@ var agent = require('superagent');
       }
 
       if (typeof data === "object") {
-        return request(this._configs, {
+        return Hoist._request(this._configs, {
           url: "notify.hoi.io/notification/" + id,
           data: data
         }, success, error, context);
@@ -892,13 +785,13 @@ var agent = require('superagent');
         error = success;
         success = file;
 
-        return request(this._configs, {
+        return Hoist._request(this._configs, {
           url: "file.hoi.io/" + key,
           responseType: "blob"
         }, success, error, context);
         //undefined is DOMWindow in phantom for some reason
       } else if (type === "Undefined" || type === "DOMWindow") {
-        return request(this._configs, {
+        return Hoist._request(this._configs, {
           url: "file.hoi.io/" + key,
           responseType: "blob"
         }, success, error, context);
@@ -906,7 +799,7 @@ var agent = require('superagent');
         return asyncError(error, context, "can't send file of type " + type);
       }
 
-      return request(this._configs, {
+      return Hoist._request(this._configs, {
         url: "file.hoi.io/" + key,
         data: data
       }, success, error, context);
@@ -953,7 +846,7 @@ var agent = require('superagent');
         error = null;
       }
 
-      return request(this._hoist._configs, {
+      return Hoist._request(this._hoist._configs, {
         url: "auth.hoi.io/bucket/current",
         process: function (bucket) {
           hoist._bucket = bucket;
@@ -983,12 +876,12 @@ var agent = require('superagent');
       }
 
       if (id) {
-        return request(this._hoist._configs, {
+        return Hoist._request(this._hoist._configs, {
           url: "auth.hoi.io/bucket/" + id,
           data: data
         }, success, error, context);
       } else {
-        return request(this._hoist._configs, {
+        return Hoist._request(this._hoist._configs, {
           url: "auth.hoi.io/bucket",
           data: data
         }, success, error, context);
@@ -1011,7 +904,7 @@ var agent = require('superagent');
         key = hoist._bucket.key;
       }
 
-      return request(hoist._configs, {
+      return Hoist._request(hoist._configs, {
         url: "auth.hoi.io/bucket/" + key + "/meta",
         data: meta,
         process: function (bucket) {
@@ -1027,7 +920,7 @@ var agent = require('superagent');
     set: function (key, success, error, context) {
       var hoist = this._hoist;
 
-      return request(this._hoist._configs, {
+      return Hoist._request(this._hoist._configs, {
         url: "auth.hoi.io/bucket/current/" + (key || "default"),
         method: "POST",
         process: function (bucket) {
@@ -1038,7 +931,7 @@ var agent = require('superagent');
     },
 
     list: function (success, error, context) {
-      return request(this._hoist._configs, {
+      return Hoist._request(this._hoist._configs, {
         url: "auth.hoi.io/buckets"
       }, success, error, context);
     },
@@ -1056,7 +949,7 @@ var agent = require('superagent');
         bucket: key
       }, data);
 
-      return request(this._hoist._configs, {
+      return Hoist._request(this._hoist._configs, {
         url: "auth.hoi.io/invite",
         data: data
       }, success, error, context);
@@ -1084,7 +977,7 @@ var agent = require('superagent');
         }
       }, options);
 
-      return request(this.hoist._configs, {
+      return Hoist._request(this.hoist._configs, {
         url: this.url + "/connect",
         data: {
           return_url: options.url
@@ -1103,12 +996,12 @@ var agent = require('superagent');
     },
 
     disconnect: function (success, error, context) {
-      return request(this.hoist_configs, {
+      return Hoist._request(this.hoist_configs, {
         url: this.url + "/disconnect"
       }, success, error, context);
     },
     removeFromUser: function (success, error, context) {
-      return request(this.hoist_configs, {
+      return Hoist._request(this.hoist_configs, {
         url: this.url + "/removeFromUser"
       }, success, error, context);
     },
@@ -1116,7 +1009,7 @@ var agent = require('superagent');
     get: function (path, success, error, context) {
 
       if (path[0] !== '/') path = '/' + path;
-      return request(this.hoist._configs, {
+      return Hoist._request(this.hoist._configs, {
         url: this.url + path,
         token: this.token
       }, success, error, context);
@@ -1124,7 +1017,7 @@ var agent = require('superagent');
 
     post: function (path, data, success, error, context) {
       if (path[0] !== '/') path = '/' + path;
-      return request(this.hoist._configs, {
+      return Hoist._request(this.hoist._configs, {
         url: this.url + path,
         data: data,
         token: this.token
@@ -1133,7 +1026,7 @@ var agent = require('superagent');
 
     put: function (path, data, success, error, context) {
       if (path[0] !== '/') path = '/' + path;
-      return request(this.hoist._configs, {
+      return Hoist._request(this.hoist._configs, {
         url: this.url + path,
         data: data,
         method: "PUT",
@@ -1150,7 +1043,7 @@ var agent = require('superagent');
       }
 
       if (path[0] !== '/') path = '/' + path;
-      return request(this.hoist._configs, {
+      return Hoist._request(this.hoist._configs, {
         url: this.url + path,
         data: data,
         method: "DELETE",
@@ -1189,13 +1082,121 @@ var agent = require('superagent');
     return hoist;
   }
 
-  var Hoist = extend(makeHoist(), {
+  // ajax helper
+
+  function request(configs, opts, success, error, context) {
+
+    var method, contentType, responseType;
+
+    if ("data" in opts) {
+      var type = classOf(opts.data);
+      console.log(type);
+      if (type === "String") {
+        contentType = "application/json";
+      } else if (type === "FormData") {
+        method = opts.method || "POST";
+        //contentType = "application/x-www-form-urlencoded";
+      } else {
+        method = opts.method || "POST";
+        contentType = "application/json";
+        opts.data = JSON.stringify(opts.data);
+      }
+    } else {
+      method = opts.method || "GET";
+    }
+
+    if (typeof error !== "function") {
+      if (!context) context = error;
+      error = null;
+    }
+
+    if (configs && !configs.apikey) {
+      return asyncError(error, context, "API key not set", null);
+    }
+    var func = method.toLowerCase();
+    if (func === 'delete') {
+      func = 'del';
+    }
+    var req = agent[func](configs ? configs.protocol + opts.url : opts.url);
+    if (contentType) {
+      req = req.set("Content-Type", contentType);
+    }
+
+    if (configs) {
+      req = req.set("Authorization", "Hoist " + configs.apikey);
+    }
+
+    if (opts.bucket) {
+      req = req.set("x-bucket-key", opts.bucket);
+    }
+
+    if (opts.token) {
+      req = req.set("OAuth", "Token " + opts.token);
+    }
+    if (req.withCredentials) {
+      req = req.withCredentials();
+    }
+    responseType = opts.responseType || "json";
+
+    var promise = new Promise();
+
+    var callback = function (err, res) {
+
+      if (err) {
+        console.log(err);
+        throw err;
+      }
+      if (res.status >= 200 && res.status < 400) {
+        var response = res;
+        if ((res.body || res.text) && responseType === 'json') {
+          if (res.body) {
+            response = res.body;
+          } else {
+            response = JSON.parse(res.text);
+          }
+        } else if (responseType === 'blob' && res.text && typeof Blob !== 'undefined') {
+          response = new Blob([res.text]);
+        }
+
+        if (opts.process) {
+          response = opts.process(response);
+        }
+
+        if (success) {
+          success.call(context, response, res.xhr);
+        }
+        promise.resolve(response);
+      } else {
+        var message = res.text;
+
+        if (opts.processError) message = opts.processError(message);
+
+        if (error) {
+          error.call(context, message, res.xhr);
+        }
+        promise.reject(message);
+      }
+    };
+    if (opts.data) {
+      if (classOf(opts.data) === "FormData") {
+        req._formData = opts.data;
+      } else {
+        req.send(opts.data);
+      }
+    }
+    req.end(callback);
+
+    return promise;
+  }
+
+  Hoist = extend(makeHoist(), {
     _configs: {
       protocol: "https://"
     },
     _user: null,
     _bucket: null,
-    _managers: {}
+    _managers: {},
+    _request: request
   });
 
   // throw Hoist at something it will stick to
