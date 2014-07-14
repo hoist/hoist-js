@@ -1196,7 +1196,8 @@ var agent = require('superagent');
     _user: null,
     _bucket: null,
     _managers: {},
-    _request: request
+    _request: request,
+    _agent:agent
   });
 
   // throw Hoist at something it will stick to
