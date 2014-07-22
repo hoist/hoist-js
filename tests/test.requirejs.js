@@ -24,7 +24,8 @@ require([
   '../tests/data/data_api_specs',
   '../tests/auth/auth_api_specs',
   '../tests/notify/notify_api_specs',
-  '../tests/file/file_api_specs'
+  '../tests/file/file_api_specs',
+  '../tests/search/search_api_specs'
 ], function (chai, chaiAsPromised) {
   chai.use(chaiAsPromised);
   // INITIALIZE THE RUN

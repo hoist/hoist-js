@@ -2048,6 +2048,62 @@ var agent = require('superagent');
       }, success, error, context);
     },
 
+    index: function (path, content, success, error, context) {
+      if (!content || typeof content === "function") {
+        context = error;
+        error = success;
+        success = content;
+        var data = path;
+        if (classOf(path) === "Array") {
+          data = {
+            pages: path
+          };
+        }
+        return request(this._configs, {
+          url: "search.hoi.io/index",
+          data: data,
+          method: 'POST'
+        }, success, error, context);
+      }
+      
+      return request(this._configs, {
+        url: "search.hoi.io/index",
+        data: {
+          path: path,
+          content: content
+        },
+        method: 'POST'
+      }, success, error, context);
+    },
+
+    getIndex: function (path, success, error, context) {
+      path = path.replace(/#!/, '?_escaped_fragment_=');
+      return request(this._configs, {
+        url: "search.hoi.io/index?path=" + path,
+        method: 'GET',
+        responseType: 'text/html'
+      }, success, error, context);
+    },
+
+    deIndex: function (path, regex, success, error, context) {
+      if (typeof regex === "function") {
+        context = error;
+        error = success;
+        success = regex;
+        regex = false;
+      } else {
+        regex = !!regex;
+      }
+      return request(this._configs, {
+        url: "search.hoi.io/index",
+        data: {
+          path: path,
+          regex: regex
+        },
+        method: 'DELETE'
+      }, success, error, context);
+    },
+    
     use: function (bucket) {
       var hoist = this;
 
@@ -2439,7 +2495,8 @@ var agent = require('superagent');
     _user: null,
     _bucket: null,
     _managers: {},
-    _request: request
+    _request: request,
+    _agent:agent
   });
 
   // throw Hoist at something it will stick to
