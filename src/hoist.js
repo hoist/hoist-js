@@ -822,7 +822,7 @@ var agent = require('superagent');
           method: 'POST'
         }, success, error, context);
       }
-      
+
       return request(this._configs, {
         url: "search.hoi.io/index",
         data: {
@@ -860,7 +860,7 @@ var agent = require('superagent');
         method: 'DELETE'
       }, success, error, context);
     },
-    
+
     use: function (bucket) {
       var hoist = this;
 
@@ -1052,12 +1052,12 @@ var agent = require('superagent');
     },
 
     disconnect: function (success, error, context) {
-      return Hoist._request(this.hoist_configs, {
+      return Hoist._request(this.hoist._configs, {
         url: this.url + "/disconnect"
       }, success, error, context);
     },
     removeFromUser: function (success, error, context) {
-      return Hoist._request(this.hoist_configs, {
+      return Hoist._request(this.hoist._configs, {
         url: this.url + "/removeFromUser"
       }, success, error, context);
     },
