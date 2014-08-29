@@ -7,7 +7,7 @@ module.exports = function (grunt) {
     browserify: {
       dist: {
         files: {
-          'build/hoist.min.pre.js': ['src/hoist.js']
+          'build/hoist.js': ['src/hoist.js']
         }
       },
       debug: {
@@ -16,7 +16,7 @@ module.exports = function (grunt) {
         },
         options: {
           bundleOptions: {
-            debug: true
+            debug: false
           }
         }
       }
@@ -24,7 +24,7 @@ module.exports = function (grunt) {
     uglify: {
       dist: {
         files: {
-          'build/hoist.min.js': ['build/hoist.min.pre.js']
+          'build/hoist.min.js': ['build/hoist.js']
         }
       }
     },
@@ -96,7 +96,7 @@ module.exports = function (grunt) {
 
   require('load-grunt-tasks')(grunt);
 
-
+  grunt.registerTask('build',['browserify:dist','uglify:dist']);
   grunt.registerTask("test", ['jshint', 'browserify:debug', 'browserify:dist', 'uglify:dist', 'connect:server', 'mocha_phantomjs', 'mochaTest']);
   grunt.registerTask("default", ['jshint']);
   grunt.registerTask("develop", ['jshint', 'browserify:debug', 'browserify:dist', 'uglify:dist', 'mochaTest', 'connect:develop', 'watch']);

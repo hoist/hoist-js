@@ -691,13 +691,13 @@ var agent = require('superagent');
         }, success, error, context);
       }
     },
-    forgotPassword: function (emailAddress, success, error, context) {
+    forgotPassword: function (email, success, error, context) {
       var hoist = this;
 
       return Hoist._request(this._configs, {
-        url: "auth.hoi.io/forgotPassword",
+        url: "auth.hoi.io/forgottenPassword",
         data: {
-          emailAddress: emailAddress
+          email: email
         }
       }, success, error, context);
 
