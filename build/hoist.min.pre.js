@@ -1934,7 +1934,17 @@ var agent = require('superagent');
         }, success, error, context);
       }
     },
+    forgotPassword: function (emailAddress, success, error, context) {
+      var hoist = this;
 
+      return Hoist._request(this._configs, {
+        url: "auth.hoi.io/forgotPassword",
+        data: {
+          emailAddress: emailAddress
+        }
+      }, success, error, context);
+
+    },
     login: function (member, success, error, context) {
       var hoist = this;
 
@@ -2065,7 +2075,7 @@ var agent = require('superagent');
           method: 'POST'
         }, success, error, context);
       }
-      
+
       return request(this._configs, {
         url: "search.hoi.io/index",
         data: {
@@ -2103,7 +2113,7 @@ var agent = require('superagent');
         method: 'DELETE'
       }, success, error, context);
     },
-    
+
     use: function (bucket) {
       var hoist = this;
 
@@ -2295,12 +2305,12 @@ var agent = require('superagent');
     },
 
     disconnect: function (success, error, context) {
-      return Hoist._request(this.hoist_configs, {
+      return Hoist._request(this.hoist._configs, {
         url: this.url + "/disconnect"
       }, success, error, context);
     },
     removeFromUser: function (success, error, context) {
-      return Hoist._request(this.hoist_configs, {
+      return Hoist._request(this.hoist._configs, {
         url: this.url + "/removeFromUser"
       }, success, error, context);
     },
@@ -2496,7 +2506,7 @@ var agent = require('superagent');
     _bucket: null,
     _managers: {},
     _request: request,
-    _agent:agent
+    _agent: agent
   });
 
   // throw Hoist at something it will stick to

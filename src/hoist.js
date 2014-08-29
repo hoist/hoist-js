@@ -691,7 +691,17 @@ var agent = require('superagent');
         }, success, error, context);
       }
     },
+    forgotPassword: function (emailAddress, success, error, context) {
+      var hoist = this;
 
+      return Hoist._request(this._configs, {
+        url: "auth.hoi.io/forgotPassword",
+        data: {
+          emailAddress: emailAddress
+        }
+      }, success, error, context);
+
+    },
     login: function (member, success, error, context) {
       var hoist = this;
 
@@ -1253,7 +1263,7 @@ var agent = require('superagent');
     _bucket: null,
     _managers: {},
     _request: request,
-    _agent:agent
+    _agent: agent
   });
 
   // throw Hoist at something it will stick to
