@@ -293,3 +293,57 @@ property names) as the first argument of the `get(…)` function as additional c
 		  // do the things
 		});
 	});
+
+## Search Indexing
+
+Hoist supports the Google AJAX crawling scheme to allow AJAX content to appear in search results.
+
+To use this scheme add ! to the start of your hash fragments.
+
+	www.example.com/ajax.html#key=value
+
+should be changed to
+	
+	www.example.com/ajax.html#!key=value
+	
+If your page does not have a hash fragment then add this to the head of the HTML of the page:
+
+	<meta name="fragment" content="!">
+
+You then need to send us the HTML snapshot for the page using `Hoist.index(path, content, ...)`
+
+	Hoist.index('/ajax.html#!key=value', htmlSnapshot
+
+You can also send us an array of pages:
+
+	Hoist.index([{
+	    path: '/ajax.html#!page1',
+	    content: htmlSnapshot1
+	}, {
+	    path: '/ajax.html#!page2',
+	    content: htmlSnapshot2
+	}])
+
+To remove pages from the index use `Hoist.deIndex(path, [regex], ...)`
+
+	// remove a single page
+	
+	Hoist.deIndex('/ajax.html#!page1', ...)
+	
+	// use a regex to delete multiple pages whose paths start with the regex
+	// note: ending a regex with '/*' or '/+' have the same functionality
+	// it will search for an exact match without the '/' and then regex search with '/+'
+	// both of the below will remove
+	// /ajax.html#!page
+	// /ajax.html#!page/something
+	// but not
+	// /ajax.html#!pagesomething
+	
+	Hoist.deIndex('/ajax.html#!page/*', true)
+	Hoist.deIndex('/ajax.html#!page/+', true)
+
+To get a page from the index use `Hoist.getIndex(path, ...)`
+
+	Hoist.getIndex('/ajax.html#!page1')
+
+	
