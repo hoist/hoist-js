@@ -169,7 +169,7 @@ var agent = require('superagent');
 
   function DataManager(hoist, type, bucket) {
     this.type = type;
-    this.url = "data.hoi.io/" + type;
+    this.url = this.hoist._configs.data + "/" + type;
     this.hoist = hoist;
     this.bucket = bucket;
   }
@@ -662,7 +662,7 @@ var agent = require('superagent');
       }
 
       return Hoist._request(this._configs, {
-        url: "auth.hoi.io/status",
+        url: hoist._configs.auth + "/status",
         process: function (resp) {
           hoist._user = resp;
           return resp;
@@ -679,7 +679,7 @@ var agent = require('superagent');
 
       if (typeof member === "object") {
         return Hoist._request(this._configs, {
-          url: "auth.hoi.io/user",
+          url: hoist._configs.auth + "/user",
           data: member,
           process: function (resp) {
             if (resp.redirectUrl) {
@@ -691,14 +691,16 @@ var agent = require('superagent');
         }, success, error, context);
       }
     },
-    forgotPassword: function (email, success, error, context) {
+    forgotPassword: function (data, success, error, context) {
       var hoist = this;
 
+      if (typeof data === "string") {
+        data = { email: data };
+      }
+
       return Hoist._request(this._configs, {
-        url: "auth.hoi.io/forgottenPassword",
-        data: {
-          email: email
-        }
+        url: hoist._configs.auth + "/forgottenPassword",
+        data: data
       }, success, error, context);
 
     },
@@ -707,7 +709,7 @@ var agent = require('superagent');
 
       if (typeof member === "object") {
         return Hoist._request(this._configs, {
-          url: "auth.hoi.io/login",
+          url: hoist._configs.auth + "/login",
           data: member,
           process: function (resp) {
             if (resp.redirectUrl) {
@@ -724,7 +726,7 @@ var agent = require('superagent');
       var hoist = this;
 
       return Hoist._request(this._configs, {
-        url: "auth.hoi.io/logout",
+        url: hoist._configs.auth + "/logout",
         method: "POST",
         process: function (resp) {
           hoist._user = null;
@@ -738,7 +740,7 @@ var agent = require('superagent');
       var hoist = this;
 
       return Hoist._request(this._configs, {
-        url: "auth.hoi.io/invite/" + code + "/user",
+        url: hoist._configs.auth + "/invite/" + code + "/user",
         data: data,
         process: function (resp) {
           hoist._user = resp;
@@ -762,7 +764,7 @@ var agent = require('superagent');
 
       if (typeof data === "object") {
         return Hoist._request(this._configs, {
-          url: "notify.hoi.io/notification/" + id,
+          url: this._configs.notify + "/notification/" + id,
           data: data
         }, success, error, context);
       } else {
@@ -912,8 +914,8 @@ var agent = require('superagent');
         error = null;
       }
 
-      return Hoist._request(this._hoist._configs, {
-        url: "auth.hoi.io/bucket/current",
+      return Hoist._request(hoist._configs, {
+        url: hoist._configs.auth + "/bucket/current",
         process: function (bucket) {
           hoist._bucket = bucket;
           return bucket;
@@ -943,12 +945,12 @@ var agent = require('superagent');
 
       if (id) {
         return Hoist._request(this._hoist._configs, {
-          url: "auth.hoi.io/bucket/" + id,
+          url: this._hoist._configs.auth + "/bucket/" + id,
           data: data
         }, success, error, context);
       } else {
         return Hoist._request(this._hoist._configs, {
-          url: "auth.hoi.io/bucket",
+          url: this._hoist._configs.auth + "/bucket",
           data: data
         }, success, error, context);
       }
@@ -971,7 +973,7 @@ var agent = require('superagent');
       }
 
       return Hoist._request(hoist._configs, {
-        url: "auth.hoi.io/bucket/" + key + "/meta",
+        url: hoist._configs.auth + "/bucket/" + key + "/meta",
         data: meta,
         process: function (bucket) {
           if (hoist._bucket && hoist._bucket.key == bucket.key) {
@@ -986,8 +988,8 @@ var agent = require('superagent');
     set: function (key, success, error, context) {
       var hoist = this._hoist;
 
-      return Hoist._request(this._hoist._configs, {
-        url: "auth.hoi.io/bucket/current/" + (key || "default"),
+      return Hoist._request(hoist._configs, {
+        url: hoist._configs.auth + "/bucket/current/" + (key || "default"),
         method: "POST",
         process: function (bucket) {
           hoist._bucket = key ? bucket : null;
@@ -998,7 +1000,7 @@ var agent = require('superagent');
 
     list: function (success, error, context) {
       return Hoist._request(this._hoist._configs, {
-        url: "auth.hoi.io/buckets"
+        url: this._hoist._configs.auth + "/buckets"
       }, success, error, context);
     },
 
@@ -1016,7 +1018,7 @@ var agent = require('superagent');
       }, data);
 
       return Hoist._request(this._hoist._configs, {
-        url: "auth.hoi.io/invite",
+        url: this._hoist._configs.auth + "/invite",
         data: data
       }, success, error, context);
     }
@@ -1024,7 +1026,7 @@ var agent = require('superagent');
 
   function ConnectorManager(hoist, type, token) {
     this.hoist = hoist;
-    this.url = "proxy.hoi.io/" + type;
+    this.url = this.hoist._configs.proxy + "/" + type;
     this.token = token;
   }
 
@@ -1257,7 +1259,11 @@ var agent = require('superagent');
 
   Hoist = extend(makeHoist(), {
     _configs: {
-      protocol: "https://"
+      protocol: "https://",
+      auth: "auth.hoi.io",
+      proxy: "proxy.hoi.io",
+      data: "data.hoi.io",
+      notify: "notify.hoi.io"
     },
     _user: null,
     _bucket: null,
