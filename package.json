@@ -1,6 +1,6 @@
 {
   "name": "hoist-js",
-  "version": "0.0.8-pre",
+  "version": "0.1.0",
   "description": "Client Side Library for Hoist (hoistapps.com)",
   "homepage": "http://hoistapps.com",
   "scripts": {
