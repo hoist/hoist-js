@@ -1412,8 +1412,8 @@ var agent = require('superagent');
 
   function DataManager(hoist, type, bucket) {
     this.type = type;
-    this.url = this.hoist._configs.data + "/" + type;
     this.hoist = hoist;
+    this.url = hoist._configs.data + "/" + type;
     this.bucket = bucket;
   }
 
