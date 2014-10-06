@@ -691,6 +691,7 @@ var agent = require('superagent');
         }, success, error, context);
       }
     },
+
     forgotPassword: function (data, success, error, context) {
       var hoist = this;
 
@@ -733,6 +734,12 @@ var agent = require('superagent');
           hoist._bucket = null;
           return resp;
         }
+      }, success, error, context);
+    },
+
+    invite: function (code, success, error, context) {
+      return Hoist._request(this._configs, {
+        url: this._configs.auth + "/invite/" + code + "/user"
       }, success, error, context);
     },
 
